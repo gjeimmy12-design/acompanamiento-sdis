@@ -112,6 +112,11 @@
   .g2 label.campo{margin-bottom:0;display:flex;flex-direction:column;height:100%}
   .g2 label.campo span{min-height:2.7em;display:flex;align-items:flex-end;margin-bottom:6px}
   .g2 label.campo input{margin-top:auto}
+  .g3{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;align-items:end}
+  .g3 label.campo{margin-bottom:0}
+  .g3 label.campo span{font-size:12px}
+  .g3 input{text-align:center}
+  .cnt-nombres{color:var(--tinta-2);font-weight:600}
   .col-tit{font-size:12px;color:var(--tinta-2);margin:12px 0 6px;font-weight:700;text-transform:none;letter-spacing:.2px}
   .col-tit:first-child{margin-top:0}
 
@@ -288,12 +293,8 @@
     <div class="modulo oculto" data-mod="2">
       <div class="tarjeta">
         <h2>2. Talento humano · equipo base</h2>
-        <p class="ayuda">Número de personas por perfil en cada corte.</p>
-        <table class="tabla" id="tabla-talento">
-          <thead><tr><th>Perfil</th><th>Oct 2025</th><th>Feb 2026</th><th>Ago 2026</th></tr></thead>
-          <tbody></tbody>
-        </table>
-        <label class="campo" style="margin-top:14px"><span>Nombres de las personas del equipo base</span><textarea id="th-nombres" placeholder="Una persona por línea (nombre y perfil)"></textarea></label>
+        <p class="ayuda">Registra el número de personas por perfil en cada corte y, para agosto 2026, los nombres de quienes ocupan cada perfil.</p>
+        <div id="lista-talento"></div>
         <label class="campo"><span>Observaciones del equipo base</span><textarea id="th-obs"></textarea></label>
       </div>
     </div>
@@ -607,7 +608,7 @@ function cambioJardin() {
 }
 
 function nuevoAcompanamiento(j) {
-  const th = {}; PERFILES.forEach(p => { th[p] = { oct2025: "", feb2026: "", ago2026: "" }; });
+  const th = {}; PERFILES.forEach(p => { th[p] = { oct2025: "", feb2026: "", ago2026: "", nombres: "" }; });
   const tr = {}; EQUIPOS.forEach(e => { tr[e] = { ultimaVisita: "", visitas2Meses: "" }; });
   const cob = {}; COBERTURA.forEach(c => { cob[c] = { oct2024: "", feb2026: "", ago2026: "" }; });
   cob["Cupos proyectados"].ago2026 = String(j.cupos);
@@ -618,7 +619,7 @@ function nuevoAcompanamiento(j) {
     localidad: j.localidad, codigo: j.codigo, jardin: j.nombre, cuposProyectados2026: j.cupos,
     salones: [{ nombre: "Salón 1", area2025: "", cupos2025: "", area2026: "", cupos2026: "" }],
     talentoHumano: th, transversal: tr, cobertura: cob, priorizacion: pr,
-    instrumento: {}, equipoNombres: "", equipoObservaciones: "", anexos: [], observaciones: ""
+    instrumento: {}, equipoObservaciones: "", anexos: [], observaciones: ""
   };
 }
 
@@ -637,8 +638,8 @@ function guardarBorrador() { if (aud) { store.set(CLAVE_BORRADOR, aud); $("acomp
 /* ---------- Acompañamiento ---------- */
 function abrirAcompanamiento() {
   aud.instrumento = aud.instrumento || {};
-  aud.equipoNombres = aud.equipoNombres || "";
   aud.equipoObservaciones = aud.equipoObservaciones || "";
+  PERFILES.forEach(p => { if (aud.talentoHumano[p] && aud.talentoHumano[p].nombres === undefined) aud.talentoHumano[p].nombres = ""; });
   $("acomp-encabezado").innerHTML = `<b>${aud.codigo} · ${aud.jardin}</b><br>${aud.localidad} · Proyección 2026: ${aud.cuposProyectados2026} cupos`;
   renderModulos(); renderSalones(); renderTalento(); renderTransversal(); renderCobertura(); renderPriorizacion(); renderInstrumento(); renderAnexos();
   $("in-observaciones").value = aud.observaciones || "";
@@ -720,16 +721,34 @@ function agregarSalon() {
 
 /* Módulo 2 */
 function renderTalento() {
-  const tb = $("tabla-talento").querySelector("tbody"); tb.innerHTML = "";
-  PERFILES.forEach(p => {
-    const tr = document.createElement("tr");
-    tr.innerHTML = `<td>${p}</td>` + CORTES_TH.map(([k]) => `<td><input type="number" inputmode="numeric" min="0" data-p="${p}" data-k="${k}" value="${aud.talentoHumano[p][k]}"></td>`).join("");
-    tb.appendChild(tr);
+  const c = $("lista-talento"); c.innerHTML = "";
+  PERFILES.forEach((p, i) => {
+    const v = aud.talentoHumano[p];
+    const d = document.createElement("div"); d.className = "salon";
+    d.innerHTML = `
+      <div class="enc"><b>${p}</b></div>
+      <div class="col-tit">Personas por corte</div>
+      <div class="g3">
+        <label class="campo"><span>Oct 2025</span><input type="number" inputmode="numeric" min="0" data-p="${p}" data-k="oct2025" value="${v.oct2025}"></label>
+        <label class="campo"><span>Feb 2026</span><input type="number" inputmode="numeric" min="0" data-p="${p}" data-k="feb2026" value="${v.feb2026}"></label>
+        <label class="campo"><span>Ago 2026</span><input type="number" inputmode="numeric" min="0" data-p="${p}" data-k="ago2026" value="${v.ago2026}"></label>
+      </div>
+      <label class="campo" style="margin-top:10px"><span>Nombres <span class="cnt-nombres" id="cnt-nombres-${i}">${v.ago2026 ? `(Ago 2026: ${v.ago2026})` : ""}</span></span><textarea data-nom="${p}" placeholder="Una persona por línea">${v.nombres || ""}</textarea></label>`;
+    c.appendChild(d);
   });
-  tb.querySelectorAll("input").forEach(i => i.addEventListener("input", e => { aud.talentoHumano[e.target.dataset.p][e.target.dataset.k] = e.target.value; guardarBorrador(); }));
-  $("th-nombres").value = aud.equipoNombres || "";
+  c.querySelectorAll("input").forEach(inp => inp.addEventListener("input", e => {
+    const p = e.target.dataset.p, k = e.target.dataset.k;
+    aud.talentoHumano[p][k] = e.target.value; guardarBorrador();
+    if (k === "ago2026") {
+      const idx = PERFILES.indexOf(p);
+      const lbl = $("cnt-nombres-" + idx);
+      if (lbl) lbl.textContent = e.target.value ? `(Ago 2026: ${e.target.value})` : "";
+    }
+  }));
+  c.querySelectorAll("[data-nom]").forEach(t => t.addEventListener("input", e => {
+    aud.talentoHumano[e.target.dataset.nom].nombres = e.target.value; guardarBorrador();
+  }));
   $("th-obs").value = aud.equipoObservaciones || "";
-  $("th-nombres").oninput = e => { aud.equipoNombres = e.target.value; guardarBorrador(); };
   $("th-obs").oninput = e => { aud.equipoObservaciones = e.target.value; guardarBorrador(); };
 }
 
