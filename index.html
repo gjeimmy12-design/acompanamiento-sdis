@@ -361,7 +361,7 @@
    Si queda vacía, la app funciona en modo local y descarga el
    resultado como archivo JSON en lugar de enviarlo.
    ========================================================= */
-const API_URL = "https://script.google.com/macros/s/AKfycbx3A7Z8Hb4UqIdvAq5ClR4grEZMhEVA84_io32sHmqcqbci9v1Ix36JI-DhaawQknY/exec";
+const API_URL = "https://script.google.com/macros/s/AKfycbxHLpizgDxD7W_bHvs0DwMeCjE1KG2Kn8V3qDMR9sYYTtDDSxRbV5JXalOjBisbRUw/exec";
 
 /* ---------- Catálogo de jardines ---------- */
 const JARDINES_TSV = `USAQUEN	122654	122654-JARDIN INFANTIL NOCTURNO-SANTA CECILIA	38
@@ -460,9 +460,19 @@ function cargando(on, texto) {
 
 /* ---------- Backend ---------- */
 async function api(payload) {
-  const r = await fetch(API_URL, { method: "POST", body: JSON.stringify(payload) });
+  let r;
+  try {
+    r = await fetch(API_URL, {
+      method: "POST",
+      redirect: "follow",
+      headers: { "Content-Type": "text/plain;charset=utf-8" },
+      body: JSON.stringify(payload)
+    });
+  } catch (e) {
+    throw new Error("No se pudo conectar con el servidor. Revisa la conexión a internet y que la URL del servicio esté publicada con acceso para cualquiera.");
+  }
   const t = await r.text();
-  try { return JSON.parse(t); } catch (e) { throw new Error("El servidor respondió algo inesperado: " + t.slice(0, 120)); }
+  try { return JSON.parse(t); } catch (e) { throw new Error("El servidor respondió algo inesperado (¿la app web pide iniciar sesión?): " + t.slice(0, 120)); }
 }
 
 /* ---------- Login ---------- */
