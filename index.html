@@ -1,0 +1,936 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0E2A5C">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>Acompañamiento de Jardines Nocturnos SDIS</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Nunito+Sans:opsz,wght@6..12,400;6..12,600;6..12,800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --azul:#0E2A5C;        /* azul institucional SDIS */
+    --azul-2:#1D4E9E;
+    --amarillo:#FFC72C;    /* amarillo Bogotá */
+    --rojo:#C8102E;        /* rojo Bogotá */
+    --verde:#1E8E5A;
+    --fondo:#F2F4F7;
+    --blanco:#FFFFFF;
+    --tinta:#1B2330;
+    --tinta-2:#5B6675;
+    --linea:#D7DCE4;
+    --radio:12px;
+    --sombra:0 2px 10px rgba(14,42,92,.10);
+    font-family:'Nunito Sans',system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;background:var(--fondo);color:var(--tinta);font-size:16px;line-height:1.45;-webkit-text-size-adjust:100%}
+  button,input,select,textarea{font:inherit;color:inherit}
+  h1,h2,h3{margin:0;font-weight:800;line-height:1.15}
+  p{margin:0 0 .5rem}
+  .oculto{display:none!important}
+
+  /* ---------- Cabecera ---------- */
+  header{
+    position:sticky;top:0;z-index:20;background:var(--azul);color:#fff;
+    padding:calc(env(safe-area-inset-top) + 12px) 16px 12px;
+  }
+  header::after{content:"";display:block;position:absolute;left:0;right:0;bottom:-6px;height:6px;
+    background:linear-gradient(90deg,var(--amarillo) 0 60%,var(--rojo) 60% 100%)}
+  .cab{display:flex;align-items:center;gap:12px}
+  .cab .logo{width:40px;height:40px;border-radius:8px;background:var(--amarillo);display:grid;place-items:center;color:var(--azul);font-weight:800;font-size:13px;letter-spacing:.5px;flex:none}
+  .cab .titulos{flex:1;min-width:0}
+  .cab .titulos small{display:block;opacity:.8;font-size:12px}
+  .cab .titulos strong{display:block;font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .cab button{background:transparent;border:1px solid rgba(255,255,255,.4);color:#fff;border-radius:8px;padding:6px 10px;font-size:13px}
+
+  /* ---------- Pantallas ---------- */
+  main{padding:22px 16px calc(96px + env(safe-area-inset-bottom));max-width:720px;margin:0 auto}
+  .pantalla{display:none}
+  .pantalla.activa{display:block}
+
+  .tarjeta{background:var(--blanco);border:1px solid var(--linea);border-radius:var(--radio);padding:16px;margin-bottom:14px}
+  .tarjeta h2{font-size:18px;margin-bottom:6px}
+  .tarjeta .ayuda{color:var(--tinta-2);font-size:14px;margin-bottom:12px}
+
+  label.campo{display:block;margin-bottom:12px}
+  label.campo span{display:block;font-size:14px;font-weight:600;margin-bottom:4px}
+  input[type=text],input[type=password],input[type=number],input[type=date],select,textarea{
+    width:100%;border:1px solid var(--linea);border-radius:10px;padding:11px 12px;background:#fff;min-height:44px}
+  input:focus,select:focus,textarea:focus,button:focus-visible{outline:3px solid rgba(255,199,44,.75);outline-offset:1px}
+  input[type=number]{-moz-appearance:textfield}
+  textarea{min-height:90px;resize:vertical}
+
+  .btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;border:none;border-radius:10px;padding:13px 18px;font-weight:800;cursor:pointer;min-height:48px;width:100%}
+  .btn-primario{background:var(--azul);color:#fff}
+  .btn-amarillo{background:var(--amarillo);color:var(--azul)}
+  .btn-borde{background:#fff;color:var(--azul);border:1.5px solid var(--azul)}
+  .btn-peligro{background:#fff;color:var(--rojo);border:1.5px solid var(--rojo)}
+  .btn:disabled{opacity:.55;cursor:not-allowed}
+  .btn-peq{width:auto;padding:8px 12px;min-height:38px;font-size:14px}
+
+  .aviso{border-radius:10px;padding:10px 12px;font-size:14px;margin-bottom:12px}
+  .aviso-info{background:#E8EEF9;color:var(--azul)}
+  .aviso-error{background:#FBE9EC;color:var(--rojo)}
+  .aviso-ok{background:#E6F4EC;color:var(--verde)}
+
+  /* ---------- Bienvenida ---------- */
+  .hero{background:var(--azul);color:#fff;border-radius:var(--radio);padding:26px 20px;margin-bottom:16px;position:relative;overflow:hidden}
+  .hero h1{font-size:26px;margin-bottom:8px}
+  .hero p{opacity:.85;font-size:15px}
+  .hero .luna{position:absolute;right:-28px;top:-28px;width:120px;height:120px;border-radius:50%;background:var(--amarillo);opacity:.9}
+  .hero .luna::after{content:"";position:absolute;left:-22px;top:6px;width:110px;height:110px;border-radius:50%;background:var(--azul)}
+
+  /* ---------- Selección ---------- */
+  .ficha{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:8px}
+  .ficha div{background:var(--fondo);border-radius:10px;padding:10px}
+  .ficha small{display:block;color:var(--tinta-2);font-size:12px}
+  .ficha b{font-size:18px}
+
+  /* ---------- Módulos ---------- */
+  .modulos{display:flex;gap:6px;overflow-x:auto;padding:4px 0 10px;scrollbar-width:none;margin:-6px 0 8px}
+  .modulos::-webkit-scrollbar{display:none}
+  .modulos button{flex:none;border:1px solid var(--linea);background:#fff;border-radius:999px;padding:7px 12px;font-size:13px;font-weight:600;color:var(--tinta-2);display:flex;align-items:center;gap:6px}
+  .modulos button .n{width:20px;height:20px;border-radius:50%;background:var(--fondo);display:grid;place-items:center;font-size:12px;color:var(--tinta)}
+  .modulos button.activo{background:var(--azul);color:#fff;border-color:var(--azul)}
+  .modulos button.activo .n{background:var(--amarillo);color:var(--azul)}
+  .modulos button.listo .n{background:var(--verde);color:#fff}
+
+  .tabla{width:100%;border-collapse:separate;border-spacing:0 6px;font-size:14px}
+  .tabla th{text-align:center;font-weight:700;color:var(--tinta-2);padding:0 4px 4px;font-size:12px;vertical-align:bottom}
+  .tabla th:first-child{text-align:left}
+  .tabla td{padding:0 4px}
+  .tabla td:first-child{font-weight:600;width:38%;padding-right:8px;line-height:1.25}
+  .tabla input{padding:9px 8px;min-height:42px;text-align:center}
+  .tabla td:first-child + td input,.tabla input{border-radius:9px}
+
+  .salon{border:1px solid var(--linea);border-radius:12px;padding:16px;margin-bottom:12px;background:#FAFBFC}
+  .salon .enc{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}
+  .salon .enc b{font-size:15px}
+  .g2{display:grid;grid-template-columns:1fr 1fr;gap:14px;align-items:end}
+  .g2 label.campo{margin-bottom:0;display:flex;flex-direction:column;height:100%}
+  .g2 label.campo span{min-height:2.7em;display:flex;align-items:flex-end;margin-bottom:6px}
+  .g2 label.campo input{margin-top:auto}
+  .col-tit{font-size:12px;color:var(--tinta-2);margin:12px 0 6px;font-weight:700;text-transform:none;letter-spacing:.2px}
+  .col-tit:first-child{margin-top:0}
+
+  .anexo{display:flex;gap:12px;border:1px solid var(--linea);border-radius:10px;padding:10px;margin-bottom:10px;background:#fff}
+  .anexo img{width:84px;height:84px;object-fit:cover;border-radius:8px;flex:none;background:var(--fondo)}
+  .anexo .txt{flex:1;min-width:0;font-size:14px}
+  .anexo .txt b{display:block;color:var(--azul)}
+  .anexo .txt small{color:var(--tinta-2)}
+  .chip{display:inline-block;background:var(--fondo);border-radius:999px;padding:2px 8px;font-size:12px;margin-top:4px}
+  .captura{border:2px dashed var(--azul-2);border-radius:12px;padding:18px;text-align:center;color:var(--azul);font-weight:700;background:#F6F9FF;cursor:pointer}
+  .captura input{display:none}
+  .vista-previa{width:100%;max-height:260px;object-fit:contain;border-radius:10px;margin-top:10px;background:#000}
+
+  .resumen dl{display:grid;grid-template-columns:1fr auto;gap:6px 12px;margin:0;font-size:14px}
+  .resumen dt{color:var(--tinta-2)}
+  .resumen dd{margin:0;font-weight:700;text-align:right}
+
+  /* ---------- Dashboard ---------- */
+  .dash-top{background:var(--azul);color:#fff;border-radius:var(--radio);padding:20px;display:flex;align-items:center;gap:18px;margin-bottom:14px}
+  .anillo{flex:none;position:relative;width:120px;height:120px}
+  .anillo svg{transform:rotate(-90deg)}
+  .anillo .centro{position:absolute;inset:0;display:grid;place-content:center;text-align:center}
+  .anillo .centro b{font-size:28px;line-height:1}
+  .anillo .centro small{font-size:11px;opacity:.85}
+  .dash-top .lado{flex:1}
+  .dash-top .lado h2{font-size:17px;margin-bottom:4px}
+  .dash-top .lado p{opacity:.85;font-size:13px;margin:0}
+  .kpis{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:14px}
+  .kpi{background:#fff;border:1px solid var(--linea);border-radius:10px;padding:12px;text-align:center}
+  .kpi b{display:block;font-size:22px;color:var(--azul)}
+  .kpi small{color:var(--tinta-2);font-size:12px}
+  .barra-loc{margin-bottom:12px}
+  .barra-loc .fila{display:flex;justify-content:space-between;font-size:13px;margin-bottom:4px}
+  .barra-loc .fila .cnt{color:var(--tinta-2);font-weight:600}
+  .pista{height:10px;border-radius:999px;background:var(--fondo);overflow:hidden}
+  .pista i{display:block;height:100%;border-radius:999px;background:var(--azul-2)}
+  .pista i.full{background:var(--verde)}
+  .pista i.cero{background:var(--linea)}
+  .reciente{display:flex;justify-content:space-between;gap:8px;font-size:13px;padding:8px 0;border-bottom:1px solid var(--linea)}
+  .reciente:last-child{border-bottom:none}
+  .reciente .meta{color:var(--tinta-2);font-size:12px;text-align:right;flex:none}
+
+  /* ---------- Barra inferior ---------- */
+  .pie{position:fixed;left:0;right:0;bottom:0;background:#fff;border-top:1px solid var(--linea);padding:10px 16px calc(10px + env(safe-area-inset-bottom));display:flex;gap:10px;z-index:20}
+  .pie .btn{flex:1}
+  .estado{font-size:12px;color:var(--tinta-2);text-align:center;margin-top:8px}
+
+  .cargando{position:fixed;inset:0;background:rgba(14,42,92,.85);color:#fff;display:grid;place-items:center;z-index:50;text-align:center;padding:20px}
+  .cargando .aro{width:44px;height:44px;border:4px solid rgba(255,255,255,.3);border-top-color:var(--amarillo);border-radius:50%;animation:gira 1s linear infinite;margin:0 auto 12px}
+  @keyframes gira{to{transform:rotate(360deg)}}
+  @media (prefers-reduced-motion:reduce){.cargando .aro{animation:none}}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="cab">
+    <div class="logo">SDIS</div>
+    <div class="titulos">
+      <small>Secretaría Distrital de Integración Social</small>
+      <strong id="cab-titulo">Acompañamiento de Jardines Nocturnos</strong>
+    </div>
+    <button id="btn-salir" class="oculto" type="button">Salir</button>
+  </div>
+</header>
+
+<main>
+
+  <!-- ============ PANTALLA 1: BIENVENIDA / LOGIN ============ -->
+  <section id="p-login" class="pantalla activa">
+    <div class="hero">
+      <div class="luna"></div>
+      <h1>Acompañamiento de Jardines Nocturnos SDIS</h1>
+      <p>Verificación en sitio de plantas físicas, talento humano, cobertura y priorización de los jardines infantiles nocturnos de Bogotá.</p>
+    </div>
+    <div class="tarjeta">
+      <h2>Ingresa con tu usuario</h2>
+      <p class="ayuda">Tu usuario define el rol con el que quedan registradas las visitas.</p>
+      <div id="login-error" class="aviso aviso-error oculto"></div>
+      <label class="campo"><span>Usuario</span><input id="in-usuario" type="text" autocapitalize="none" autocomplete="username" placeholder="nombre.apellido"></label>
+      <label class="campo"><span>Contraseña</span><input id="in-clave" type="password" autocomplete="current-password"></label>
+      <button id="btn-login" class="btn btn-primario" type="button">Entrar</button>
+      <p class="estado" id="login-estado"></p>
+    </div>
+  </section>
+
+  <!-- ============ PANTALLA 2: LOCALIDAD Y JARDÍN ============ -->
+  <section id="p-seleccion" class="pantalla">
+    <div class="tarjeta">
+      <h2>¿Qué jardín vas a acompañar?</h2>
+      <p class="ayuda">Elige primero la localidad; la lista de jardines se ajusta automáticamente.</p>
+      <label class="campo"><span>Localidad</span>
+        <select id="sel-localidad"><option value="">Selecciona una localidad</option></select>
+      </label>
+      <label class="campo"><span>Jardín infantil nocturno</span>
+        <select id="sel-jardin" disabled><option value="">Primero elige la localidad</option></select>
+      </label>
+      <div id="ficha-jardin" class="ficha oculto">
+        <div><small>Código SIRBE</small><b id="f-codigo">—</b></div>
+        <div><small>Proyección cobertura 2026</small><b id="f-cupos">—</b></div>
+      </div>
+    </div>
+    <div id="borrador-aviso" class="aviso aviso-info oculto">
+      Hay un acompañamiento sin enviar de <b id="borrador-jardin"></b>.
+      <div style="display:flex;gap:8px;margin-top:8px">
+        <button id="btn-continuar-borrador" class="btn btn-borde btn-peq" type="button">Continuar</button>
+        <button id="btn-descartar-borrador" class="btn btn-peligro btn-peq" type="button">Descartar</button>
+      </div>
+    </div>
+    <button id="btn-iniciar" class="btn btn-amarillo" type="button" disabled>Iniciar acompañamiento</button>
+    <button id="btn-ver-dash" class="btn btn-borde" type="button" style="margin-top:10px">Ver seguimiento de acompañamientos</button>
+  </section>
+
+  <!-- ============ PANTALLA DASHBOARD ============ -->
+  <section id="p-dashboard" class="pantalla">
+    <div id="dash-cuerpo"><p class="ayuda">Cargando seguimiento…</p></div>
+    <button id="btn-dash-actualizar" class="btn btn-borde" type="button">Actualizar</button>
+    <button id="btn-dash-volver" class="btn btn-primario" type="button" style="margin-top:10px">Volver</button>
+  </section>
+
+  <!-- ============ PANTALLA 3: ACOMPAÑAMIENTO ============ -->
+  <section id="p-acompanamiento" class="pantalla">
+    <div id="acomp-encabezado" class="aviso aviso-info"></div>
+    <nav class="modulos" id="modulos"></nav>
+
+    <!-- Módulo 1: Plantas físicas -->
+    <div class="modulo" data-mod="1">
+      <div class="tarjeta">
+        <h2>1. Revisión de plantas físicas</h2>
+        <p class="ayuda">Registra cada salón asignado a la modalidad nocturna. Una unidad operativa puede tener uno o más salones.</p>
+        <div id="lista-salones"></div>
+        <button id="btn-agregar-salon" class="btn btn-borde" type="button">+ Agregar salón</button>
+      </div>
+    </div>
+
+    <!-- Módulo 2: Talento humano -->
+    <div class="modulo oculto" data-mod="2">
+      <div class="tarjeta">
+        <h2>2. Talento humano · equipo base</h2>
+        <p class="ayuda">Número de personas por perfil en cada corte.</p>
+        <table class="tabla" id="tabla-talento">
+          <thead><tr><th>Perfil</th><th>Oct 2025</th><th>Feb 2026</th><th>Ago 2026</th></tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Módulo 3: Equipo transversal -->
+    <div class="modulo oculto" data-mod="3">
+      <div class="tarjeta">
+        <h2>3. Equipo transversal</h2>
+        <p class="ayuda">Fecha de la última visita y número de visitas en los últimos dos meses.</p>
+        <div id="lista-transversal"></div>
+      </div>
+    </div>
+
+    <!-- Módulo 4: Cobertura -->
+    <div class="modulo oculto" data-mod="4">
+      <div class="tarjeta">
+        <h2>4. Cobertura</h2>
+        <p class="ayuda">La proyección 2026 se precarga con el dato oficial; puedes ajustarla si el jardín reporta otro valor.</p>
+        <table class="tabla" id="tabla-cobertura">
+          <thead><tr><th>Indicador</th><th>Oct 2024</th><th>Feb 2026</th><th>Ago 2026</th></tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Módulo 5: Priorización -->
+    <div class="modulo oculto" data-mod="5">
+      <div class="tarjeta">
+        <h2>5. Caracterización de priorización</h2>
+        <p class="ayuda">A hoy, ¿cuántas niñas y niños reciben el servicio con alguna característica de priorización?</p>
+        <table class="tabla" id="tabla-priorizacion">
+          <thead><tr><th>Priorización</th><th>Cantidad</th></tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Módulo 6: Anexos -->
+    <div class="modulo oculto" data-mod="6">
+      <div class="tarjeta">
+        <h2>6. Anexos fotográficos</h2>
+        <p class="ayuda">Condiciones inseguras y novedades de infraestructura. Cada foto recibe un consecutivo del jardín al enviarse.</p>
+        <label class="campo"><span>Tipo de novedad</span>
+          <select id="ax-categoria">
+            <option>Condición insegura</option>
+            <option>Novedad de infraestructura</option>
+            <option>Dotación y mobiliario</option>
+            <option>Otra evidencia</option>
+          </select>
+        </label>
+        <label class="campo"><span>Descripción</span><textarea id="ax-descripcion" placeholder="Qué se observa, dónde está y qué riesgo representa"></textarea></label>
+        <label class="captura">
+          <span id="captura-texto">📷 Tomar foto con la cámara</span>
+          <input id="ax-foto" type="file" accept="image/*" capture="environment">
+        </label>
+        <img id="ax-previa" class="vista-previa oculto" alt="Vista previa de la foto">
+        <button id="btn-agregar-anexo" class="btn btn-primario" type="button" style="margin-top:12px" disabled>Guardar anexo</button>
+      </div>
+      <div class="tarjeta">
+        <h2>Anexos registrados <span id="ax-conteo" class="chip">0</span></h2>
+        <div id="lista-anexos"><p class="ayuda">Aún no hay anexos en esta visita.</p></div>
+      </div>
+    </div>
+
+    <!-- Módulo 7: Resumen y envío -->
+    <div class="modulo oculto" data-mod="7">
+      <div class="tarjeta resumen">
+        <h2>Revisar y enviar</h2>
+        <p class="ayuda">Al enviar se registra la visita con el formulario, las fotos y su consecutivo. La información se guarda de forma segura; los datos quedan disponibles en el seguimiento.</p>
+        <dl id="resumen-datos"></dl>
+      </div>
+      <div class="tarjeta">
+        <label class="campo"><span>Observaciones generales de la visita</span><textarea id="in-observaciones"></textarea></label>
+        <div id="envio-msg" class="oculto"></div>
+        <button id="btn-enviar" class="btn btn-amarillo" type="button">Enviar acompañamiento</button>
+      </div>
+    </div>
+
+    <p class="estado" id="acomp-estado"></p>
+  </section>
+
+  <!-- ============ PANTALLA 4: CONFIRMACIÓN ============ -->
+  <section id="p-fin" class="pantalla">
+    <div class="tarjeta">
+      <h2>Acompañamiento enviado</h2>
+      <div id="fin-detalle" class="aviso aviso-ok"></div>
+      <div id="fin-anexos"></div>
+      <button id="btn-nueva" class="btn btn-primario" type="button" style="margin-top:10px">Acompañar otro jardín</button>
+    </div>
+  </section>
+</main>
+
+<div class="pie oculto" id="pie">
+  <button id="btn-ant" class="btn btn-borde" type="button">Anterior</button>
+  <button id="btn-sig" class="btn btn-primario" type="button">Siguiente</button>
+</div>
+
+<div id="cargando" class="cargando oculto"><div><div class="aro"></div><div id="cargando-texto">Enviando…</div></div></div>
+
+<script>
+/* =========================================================
+   CONFIGURACIÓN
+   URL del Web App de Google Apps Script (Code.gs).
+   Si queda vacía, la app funciona en modo local y descarga el
+   resultado como archivo JSON en lugar de enviarlo.
+   ========================================================= */
+const API_URL = "https://script.google.com/macros/s/AKfycbx3A7Z8Hb4UqIdvAq5ClR4grEZMhEVA84_io32sHmqcqbci9v1Ix36JI-DhaawQknY/exec";
+
+/* ---------- Catálogo de jardines ---------- */
+const JARDINES_TSV = `USAQUEN	122654	122654-JARDIN INFANTIL NOCTURNO-SANTA CECILIA	38
+USAQUEN	122694	122694-JARDIN INFANTIL NOCTURNO-ORQUIDEAS	25
+USAQUEN	122696	122696-JARDIN INFANTIL NOCTURNO-BUENAVISTA	29
+USAQUEN	122697	122697-JARDIN INFANTIL NOCTURNO-VERBENAL	43
+CHAPINERO	121823	121823-JARDIN INFANTIL NOCTURNO-LAS HADAS DE LOS SUEÑOS	47
+SANTAFE - CANDELARIA	122718	122718-JARDIN INFANTIL NOCTURNO-ATA	35
+SAN CRISTOBAL	121817	121817-JARDIN INFANTIL NOCTURNO-UN MUNDO PARA SOÑAR	32
+USME - SUMAPAZ	122652	122652-JARDIN INFANTIL NOCTURNO-CHUNIZA	50
+BOSA	122672	122672-JARDIN INFANTIL NOCTURNO-LOS CEDROS	30
+BOSA	122677	122677-JARDIN INFANTIL NOCTURNO-PEQUEÑOS GIGANTES NOCTURNO	33
+KENNEDY	121793	121793-JARDIN INFANTIL NOCTURNO-ATRAPAESTRELLAS	25
+KENNEDY	121885	121885-JARDIN INFANTIL NOCTURNO-CONSTRUYENDO SUEÑOS	30
+KENNEDY	122724	122724-JARDIN INFANTIL NOCTURNO-CIUDAD DE BOGOTA	45
+KENNEDY	122725	122725-JARDIN INFANTIL NOCTURNO-LA IGUALDAD	35
+KENNEDY	122727	122727-JARDIN INFANTIL NOCTURNO-ARGELIA	35
+KENNEDY	122728	122728-JARDIN INFANTIL NOCTURNO-PERPETUO SOCORRO	25
+KENNEDY	122730	122730-JARDIN INFANTIL NOCTURNO-BRITALIA	46
+KENNEDY	122745	122745-JARDIN INFANTIL NOCTURNO-EL CARACOL	53
+KENNEDY	122746	122746-JARDIN INFANTIL NOCTURNO-AMIGUITOS POR SIEMPRE	20
+KENNEDY	122747	122747-JARDIN INFANTIL NOCTURNO-METRO	34
+KENNEDY	122753	122753-JARDIN INFANTIL NOCTURNO-VISION DE COLOMBIA	39
+KENNEDY	122755	122755-JARDIN INFANTIL NOCTURNO-PATIO BONITO SATELITE	36
+FONTIBON	122717	122717-JARDIN INFANTIL NOCTURNO-RAFAEL POMBO	35
+FONTIBON	122721	122721-JARDIN INFANTIL NOCTURNO-SABANA GRANDE	35
+ENGATIVA	121802	121802-JARDIN INFANTIL NOCTURNO-RAYITO DE LUNA	35
+ENGATIVA	122714	122714-JARDIN INFANTIL NOCTURNO-LA PAJARA PINTA	35
+SUBA	121805	121805-JARDIN INFANTIL NOCTURNO-LUCIERNAGA FELIZ	37
+SUBA	121833	121833-JARDIN INFANTIL NOCTURNO-HAMACA DE SUEÑOS	25
+SUBA	122031	122031-JARDIN INFANTIL NOCTURNO-CURRUCUTU	30
+SUBA	122701	122701-JARDIN INFANTIL NOCTURNO-NUEVOS TIMANQUITOS	33
+BARRIOS UNIDOS - TEUSAQUILLO	122704	122704-JARDIN INFANTIL NOCTURNO-SANTA SOFIA	55
+BARRIOS UNIDOS - TEUSAQUILLO	122706	122706-JARDIN INFANTIL NOCTURNO-LA CIUDAD QUE SOÑAMOS	30
+LOS MARTIRES	122355	122355-JARDIN INFANTIL NOCTURNO-NOCHES MAGICAS DE SAMPER	66
+LOS MARTIRES	122742	122742-JARDIN INFANTIL NOCTURNO-JORGE BEJARANO	65
+LOS MARTIRES	122743	122743-JARDIN INFANTIL NOCTURNO-ESPERANZA	69
+LOS MARTIRES	122744	122744-JARDIN INFANTIL NOCTURNO-NUEVOS PASOS	65
+PUENTE ARANDA - ANTONIO NARIÑO	122739	122739-JARDIN INFANTIL NOCTURNO-SANTANDER	46
+PUENTE ARANDA - ANTONIO NARIÑO	122740	122740-JARDIN INFANTIL NOCTURNO-RESTREPO	42
+PUENTE ARANDA - ANTONIO NARIÑO	122741	122741-JARDIN INFANTIL NOCTURNO-MUNDO NUEVO	25
+PUENTE ARANDA - ANTONIO NARIÑO	122008	122008-JARDIN INFANTIL NOCTURNO-SUEÑOS DE CUNA	45
+PUENTE ARANDA - ANTONIO NARIÑO	122732	122732-JARDIN INFANTIL NOCTURNO-CALIXTO TORRES	49
+PUENTE ARANDA - ANTONIO NARIÑO	122734	122734-JARDIN INFANTIL NOCTURNO-ANTONIO NARIÑO	27
+PUENTE ARANDA - ANTONIO NARIÑO	122738	122738-JARDIN INFANTIL NOCTURNO-TRINIDAD GALAN	35
+RAFAEL URIBE	121821	121821-JARDIN INFANTIL NOCTURNO-EL REPARADOR DE SUEÑOS	35
+RAFAEL URIBE	122664	122664-JARDIN INFANTIL NOCTURNO-MARCO A IRIARTE	35
+RAFAEL URIBE	122796	122796-JARDIN INFANTIL NOCTURNO-PIJAOS	35
+RAFAEL URIBE	122929	122929-JARDIN INFANTIL NOCTURNO-SAMORE	35
+CIUDAD BOLIVAR	121826	121826-JARDIN INFANTIL NOCTURNO-LUNA LUNERA	30
+CIUDAD BOLIVAR	121875	121875-JARDIN INFANTIL NOCTURNO-NOCHES DE CARTAGENA	30`;
+
+const JARDINES = JARDINES_TSV.split("\n").map(l => {
+  const [localidad, codigo, nombre, cupos] = l.split("\t");
+  return { localidad, codigo, nombre: nombre.replace(/^\d+-/, ""), cupos: Number(cupos) };
+});
+const LOCALIDADES = [...new Set(JARDINES.map(j => j.localidad))];
+
+const PERFILES = ["Responsable", "Profesional de atención a la primera infancia", "Auxiliar administrativo", "Auxiliar pedagógico"];
+const CORTES_TH = [["oct2025", "Oct 2025"], ["feb2026", "Feb 2026"], ["ago2026", "Ago 2026"]];
+const EQUIPOS = ["Equipo Entre Pares", "Equipo Psicosocial", "Nutricionistas - Enfermeras"];
+const COBERTURA = ["Cupos proyectados", "Cupos asignados", "Asistencia promedio"];
+const CORTES_COB = [["oct2024", "Oct 2024"], ["feb2026", "Feb 2026"], ["ago2026", "Ago 2026"]];
+const PRIORIZACION = ["Discapacidad", "Etnias", "Víctimas", "Desnutrición"];
+const MODULOS = ["Plantas físicas", "Talento humano", "Equipo transversal", "Cobertura", "Priorización", "Anexos", "Enviar"];
+
+/* ---------- Estado ---------- */
+const CLAVE_SESION = "sdis_acomp_sesion";
+const CLAVE_BORRADOR = "sdis_acomp_borrador";
+let sesion = null;      // {usuario, nombre, rol}
+let aud = null;         // acompañamiento en curso
+let modActual = 1;
+let fotoPendiente = null;
+
+const $ = id => document.getElementById(id);
+
+/* Almacenamiento local tolerante (algunos entornos lo bloquean) */
+const store = {
+  get(k) { try { return JSON.parse(localStorage.getItem(k)); } catch (e) { return null; } },
+  set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} },
+  del(k) { try { localStorage.removeItem(k); } catch (e) {} }
+};
+
+/* ---------- Navegación entre pantallas ---------- */
+function mostrar(id) {
+  document.querySelectorAll(".pantalla").forEach(p => p.classList.toggle("activa", p.id === id));
+  $("pie").classList.toggle("oculto", id !== "p-acompanamiento");
+  $("btn-salir").classList.toggle("oculto", id === "p-login");
+  window.scrollTo(0, 0);
+}
+
+function cargando(on, texto) {
+  $("cargando-texto").textContent = texto || "Enviando…";
+  $("cargando").classList.toggle("oculto", !on);
+}
+
+/* ---------- Backend ---------- */
+async function api(payload) {
+  const r = await fetch(API_URL, { method: "POST", body: JSON.stringify(payload) });
+  const t = await r.text();
+  try { return JSON.parse(t); } catch (e) { throw new Error("El servidor respondió algo inesperado: " + t.slice(0, 120)); }
+}
+
+/* ---------- Login ---------- */
+async function login() {
+  const usuario = $("in-usuario").value.trim();
+  const clave = $("in-clave").value;
+  const err = $("login-error");
+  err.classList.add("oculto");
+  if (!usuario || !clave) { err.textContent = "Escribe usuario y contraseña."; err.classList.remove("oculto"); return; }
+
+  if (!API_URL) {
+    sesion = { usuario, nombre: usuario, rol: "Operativo (modo local)" };
+  } else {
+    $("btn-login").disabled = true;
+    $("login-estado").textContent = "Validando…";
+    try {
+      const res = await api({ action: "login", usuario, clave });
+      if (!res.ok) throw new Error(res.error || "Usuario o contraseña incorrectos.");
+      sesion = { usuario, nombre: res.nombre, rol: res.rol };
+    } catch (e) {
+      err.textContent = e.message; err.classList.remove("oculto");
+      $("btn-login").disabled = false; $("login-estado").textContent = "";
+      return;
+    }
+    $("btn-login").disabled = false; $("login-estado").textContent = "";
+  }
+  store.set(CLAVE_SESION, sesion);
+  $("in-clave").value = "";
+  irASeleccion();
+}
+
+function salir() {
+  sesion = null; store.del(CLAVE_SESION);
+  mostrar("p-login");
+}
+
+/* ---------- Selección ---------- */
+function irASeleccion() {
+  $("cab-titulo").textContent = `${sesion.nombre} · ${sesion.rol}`;
+  const bor = store.get(CLAVE_BORRADOR);
+  if (bor && bor.codigo) {
+    $("borrador-jardin").textContent = `${bor.codigo} · ${bor.jardin}`;
+    $("borrador-aviso").classList.remove("oculto");
+  } else $("borrador-aviso").classList.add("oculto");
+  $("sel-localidad").value = ""; $("sel-jardin").innerHTML = '<option value="">Primero elige la localidad</option>';
+  $("sel-jardin").disabled = true; $("ficha-jardin").classList.add("oculto"); $("btn-iniciar").disabled = true;
+  mostrar("p-seleccion");
+}
+
+function poblarLocalidades() {
+  const s = $("sel-localidad");
+  LOCALIDADES.forEach(l => { const o = document.createElement("option"); o.value = l; o.textContent = l; s.appendChild(o); });
+}
+
+function cambioLocalidad() {
+  const loc = $("sel-localidad").value;
+  const s = $("sel-jardin");
+  s.innerHTML = '<option value="">Selecciona un jardín</option>';
+  JARDINES.filter(j => j.localidad === loc).forEach(j => {
+    const o = document.createElement("option"); o.value = j.codigo; o.textContent = `${j.codigo} · ${j.nombre.replace("JARDIN INFANTIL NOCTURNO-", "")}`; s.appendChild(o);
+  });
+  s.disabled = !loc;
+  $("ficha-jardin").classList.add("oculto"); $("btn-iniciar").disabled = true;
+}
+
+function cambioJardin() {
+  const j = JARDINES.find(x => x.codigo === $("sel-jardin").value);
+  if (!j) { $("ficha-jardin").classList.add("oculto"); $("btn-iniciar").disabled = true; return; }
+  $("f-codigo").textContent = j.codigo; $("f-cupos").textContent = j.cupos;
+  $("ficha-jardin").classList.remove("oculto"); $("btn-iniciar").disabled = false;
+}
+
+function nuevoAcompanamiento(j) {
+  const th = {}; PERFILES.forEach(p => { th[p] = { oct2025: "", feb2026: "", ago2026: "" }; });
+  const tr = {}; EQUIPOS.forEach(e => { tr[e] = { ultimaVisita: "", visitas2Meses: "" }; });
+  const cob = {}; COBERTURA.forEach(c => { cob[c] = { oct2024: "", feb2026: "", ago2026: "" }; });
+  cob["Cupos proyectados"].ago2026 = String(j.cupos);
+  const pr = {}; PRIORIZACION.forEach(p => { pr[p] = ""; });
+  return {
+    inicio: new Date().toISOString(),
+    usuario: sesion.usuario, nombreUsuario: sesion.nombre, rol: sesion.rol,
+    localidad: j.localidad, codigo: j.codigo, jardin: j.nombre, cuposProyectados2026: j.cupos,
+    salones: [{ nombre: "Salón 1", area2025: "", cupos2025: "", area2026: "", cupos2026: "" }],
+    talentoHumano: th, transversal: tr, cobertura: cob, priorizacion: pr,
+    anexos: [], observaciones: ""
+  };
+}
+
+function iniciar() {
+  const j = JARDINES.find(x => x.codigo === $("sel-jardin").value);
+  if (!j) return;
+  aud = nuevoAcompanamiento(j);
+  guardarBorrador();
+  abrirAcompanamiento();
+}
+
+function continuarBorrador() { aud = store.get(CLAVE_BORRADOR); if (aud) abrirAcompanamiento(); }
+function descartarBorrador() { store.del(CLAVE_BORRADOR); $("borrador-aviso").classList.add("oculto"); }
+function guardarBorrador() { if (aud) { store.set(CLAVE_BORRADOR, aud); $("acomp-estado").textContent = "Borrador guardado en este dispositivo"; } }
+
+/* ---------- Acompañamiento ---------- */
+function abrirAcompanamiento() {
+  $("acomp-encabezado").innerHTML = `<b>${aud.codigo} · ${aud.jardin}</b><br>${aud.localidad} · Proyección 2026: ${aud.cuposProyectados2026} cupos`;
+  renderModulos(); renderSalones(); renderTalento(); renderTransversal(); renderCobertura(); renderPriorizacion(); renderAnexos();
+  $("in-observaciones").value = aud.observaciones || "";
+  irModulo(1);
+  mostrar("p-acompanamiento");
+}
+
+function renderModulos() {
+  const nav = $("modulos"); nav.innerHTML = "";
+  MODULOS.forEach((m, i) => {
+    const b = document.createElement("button"); b.type = "button";
+    b.innerHTML = `<span class="n">${i + 1}</span>${m}`;
+    b.onclick = () => irModulo(i + 1);
+    nav.appendChild(b);
+  });
+}
+
+function moduloListo(n) {
+  const num = v => v !== "" && v !== null && v !== undefined;
+  switch (n) {
+    case 1: return aud.salones.length > 0 && aud.salones.every(s => num(s.area2026) && num(s.cupos2026));
+    case 2: return PERFILES.some(p => CORTES_TH.some(([k]) => num(aud.talentoHumano[p][k])));
+    case 3: return EQUIPOS.some(e => num(aud.transversal[e].ultimaVisita));
+    case 4: return COBERTURA.every(c => num(aud.cobertura[c].ago2026));
+    case 5: return PRIORIZACION.some(p => num(aud.priorizacion[p]));
+    case 6: return aud.anexos.length > 0;
+    default: return false;
+  }
+}
+
+function irModulo(n) {
+  modActual = n;
+  document.querySelectorAll(".modulo").forEach(m => m.classList.toggle("oculto", Number(m.dataset.mod) !== n));
+  [...$("modulos").children].forEach((b, i) => {
+    b.classList.toggle("activo", i + 1 === n);
+    b.classList.toggle("listo", i + 1 !== n && moduloListo(i + 1));
+  });
+  const act = $("modulos").children[n - 1]; if (act) act.scrollIntoView({ inline: "center", block: "nearest", behavior: "smooth" });
+  $("btn-ant").disabled = n === 1;
+  $("btn-sig").classList.toggle("oculto", n === MODULOS.length);
+  if (n === MODULOS.length) renderResumen();
+  window.scrollTo(0, 0);
+}
+
+/* Módulo 1 */
+function renderSalones() {
+  const c = $("lista-salones"); c.innerHTML = "";
+  aud.salones.forEach((s, i) => {
+    const d = document.createElement("div"); d.className = "salon";
+    d.innerHTML = `
+      <div class="enc"><b>${s.nombre}</b>${aud.salones.length > 1 ? `<button class="btn btn-peligro btn-peq" type="button" data-quitar="${i}">Quitar</button>` : ""}</div>
+      <div class="col-tit">2025</div>
+      <div class="g2">
+        <label class="campo"><span>Área de atención (m²)</span><input type="number" inputmode="decimal" min="0" step="0.1" data-i="${i}" data-k="area2025" value="${s.area2025}"></label>
+        <label class="campo"><span>Cupos proyectados</span><input type="number" inputmode="numeric" min="0" data-i="${i}" data-k="cupos2025" value="${s.cupos2025}"></label>
+      </div>
+      <div class="col-tit">2026</div>
+      <div class="g2">
+        <label class="campo"><span>Área de atención (m²)</span><input type="number" inputmode="decimal" min="0" step="0.1" data-i="${i}" data-k="area2026" value="${s.area2026}"></label>
+        <label class="campo"><span>Cupos proyectados</span><input type="number" inputmode="numeric" min="0" data-i="${i}" data-k="cupos2026" value="${s.cupos2026}"></label>
+      </div>`;
+    c.appendChild(d);
+  });
+  c.querySelectorAll("input").forEach(inp => inp.addEventListener("input", e => {
+    aud.salones[Number(e.target.dataset.i)][e.target.dataset.k] = e.target.value; guardarBorrador();
+  }));
+  c.querySelectorAll("[data-quitar]").forEach(b => b.onclick = () => {
+    aud.salones.splice(Number(b.dataset.quitar), 1);
+    aud.salones.forEach((s, i) => s.nombre = `Salón ${i + 1}`);
+    guardarBorrador(); renderSalones();
+  });
+}
+
+function agregarSalon() {
+  aud.salones.push({ nombre: `Salón ${aud.salones.length + 1}`, area2025: "", cupos2025: "", area2026: "", cupos2026: "" });
+  guardarBorrador(); renderSalones();
+}
+
+/* Módulo 2 */
+function renderTalento() {
+  const tb = $("tabla-talento").querySelector("tbody"); tb.innerHTML = "";
+  PERFILES.forEach(p => {
+    const tr = document.createElement("tr");
+    tr.innerHTML = `<td>${p}</td>` + CORTES_TH.map(([k]) => `<td><input type="number" inputmode="numeric" min="0" data-p="${p}" data-k="${k}" value="${aud.talentoHumano[p][k]}"></td>`).join("");
+    tb.appendChild(tr);
+  });
+  tb.querySelectorAll("input").forEach(i => i.addEventListener("input", e => { aud.talentoHumano[e.target.dataset.p][e.target.dataset.k] = e.target.value; guardarBorrador(); }));
+}
+
+/* Módulo 3 */
+function renderTransversal() {
+  const c = $("lista-transversal"); c.innerHTML = "";
+  EQUIPOS.forEach(eq => {
+    const d = document.createElement("div"); d.className = "salon";
+    d.innerHTML = `<div class="enc"><b>${eq}</b></div>
+      <div class="g2">
+        <label class="campo"><span>Fecha de la última visita</span><input type="date" data-e="${eq}" data-k="ultimaVisita" value="${aud.transversal[eq].ultimaVisita}"></label>
+        <label class="campo"><span>Visitas en los últimos 2 meses</span><input type="number" inputmode="numeric" min="0" data-e="${eq}" data-k="visitas2Meses" value="${aud.transversal[eq].visitas2Meses}"></label>
+      </div>`;
+    c.appendChild(d);
+  });
+  c.querySelectorAll("input").forEach(i => i.addEventListener("input", e => { aud.transversal[e.target.dataset.e][e.target.dataset.k] = e.target.value; guardarBorrador(); }));
+}
+
+/* Módulo 4 */
+function renderCobertura() {
+  const tb = $("tabla-cobertura").querySelector("tbody"); tb.innerHTML = "";
+  COBERTURA.forEach(cb => {
+    const tr = document.createElement("tr");
+    tr.innerHTML = `<td>${cb}</td>` + CORTES_COB.map(([k]) => `<td><input type="number" inputmode="numeric" min="0" data-c="${cb}" data-k="${k}" value="${aud.cobertura[cb][k]}"></td>`).join("");
+    tb.appendChild(tr);
+  });
+  tb.querySelectorAll("input").forEach(i => i.addEventListener("input", e => { aud.cobertura[e.target.dataset.c][e.target.dataset.k] = e.target.value; guardarBorrador(); }));
+}
+
+/* Módulo 5 */
+function renderPriorizacion() {
+  const tb = $("tabla-priorizacion").querySelector("tbody"); tb.innerHTML = "";
+  PRIORIZACION.forEach(p => {
+    const tr = document.createElement("tr");
+    tr.innerHTML = `<td>${p}</td><td><input type="number" inputmode="numeric" min="0" data-p="${p}" value="${aud.priorizacion[p]}"></td>`;
+    tb.appendChild(tr);
+  });
+  tb.querySelectorAll("input").forEach(i => i.addEventListener("input", e => { aud.priorizacion[e.target.dataset.p] = e.target.value; guardarBorrador(); }));
+}
+
+/* Módulo 6: anexos y cámara */
+function leerFoto(archivo) {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    const url = URL.createObjectURL(archivo);
+    img.onload = () => {
+      const MAX = 1280;
+      let { width: w, height: h } = img;
+      const esc = Math.min(1, MAX / Math.max(w, h));
+      w = Math.round(w * esc); h = Math.round(h * esc);
+      const cv = document.createElement("canvas"); cv.width = w; cv.height = h;
+      cv.getContext("2d").drawImage(img, 0, 0, w, h);
+      URL.revokeObjectURL(url);
+      resolve(cv.toDataURL("image/jpeg", 0.8));
+    };
+    img.onerror = () => { URL.revokeObjectURL(url); reject(new Error("No se pudo leer la foto.")); };
+    img.src = url;
+  });
+}
+
+async function fotoSeleccionada(e) {
+  const f = e.target.files && e.target.files[0];
+  if (!f) return;
+  try {
+    fotoPendiente = await leerFoto(f);
+    $("ax-previa").src = fotoPendiente; $("ax-previa").classList.remove("oculto");
+    $("captura-texto").textContent = "📷 Tomar otra foto";
+    $("btn-agregar-anexo").disabled = false;
+  } catch (err) { alert(err.message); }
+  e.target.value = "";
+}
+
+function agregarAnexo() {
+  if (!fotoPendiente) return;
+  const n = aud.anexos.length + 1;
+  aud.anexos.push({
+    consecutivoLocal: `${aud.codigo}-A${String(n).padStart(3, "0")}`,
+    categoria: $("ax-categoria").value,
+    descripcion: $("ax-descripcion").value.trim(),
+    fecha: new Date().toISOString(),
+    foto: fotoPendiente
+  });
+  fotoPendiente = null;
+  $("ax-previa").classList.add("oculto"); $("ax-previa").src = "";
+  $("ax-descripcion").value = ""; $("captura-texto").textContent = "📷 Tomar foto con la cámara";
+  $("btn-agregar-anexo").disabled = true;
+  guardarBorrador(); renderAnexos();
+}
+
+function renderAnexos() {
+  const c = $("lista-anexos"); c.innerHTML = "";
+  $("ax-conteo").textContent = aud.anexos.length;
+  if (!aud.anexos.length) { c.innerHTML = '<p class="ayuda">Aún no hay anexos en esta visita.</p>'; return; }
+  aud.anexos.forEach((a, i) => {
+    const d = document.createElement("div"); d.className = "anexo";
+    d.innerHTML = `<img src="${a.foto}" alt="Anexo ${a.consecutivoLocal}">
+      <div class="txt"><b>${a.consecutivoLocal}</b>${a.descripcion || "<i>Sin descripción</i>"}<br><span class="chip">${a.categoria}</span></div>
+      <button class="btn btn-peligro btn-peq" type="button" data-i="${i}">Quitar</button>`;
+    c.appendChild(d);
+  });
+  c.querySelectorAll("button").forEach(b => b.onclick = () => {
+    aud.anexos.splice(Number(b.dataset.i), 1);
+    aud.anexos.forEach((a, i) => a.consecutivoLocal = `${aud.codigo}-A${String(i + 1).padStart(3, "0")}`);
+    guardarBorrador(); renderAnexos();
+  });
+}
+
+/* Módulo 7 */
+function renderResumen() {
+  const dl = $("resumen-datos");
+  const pendientes = MODULOS.slice(0, 6).filter((m, i) => !moduloListo(i + 1));
+  const suma = (obj, k) => Object.values(obj).reduce((t, v) => t + (Number(v[k]) || 0), 0);
+  dl.innerHTML = `
+    <dt>Jardín</dt><dd>${aud.codigo}</dd>
+    <dt>Salones registrados</dt><dd>${aud.salones.length}</dd>
+    <dt>Área total 2026 (m²)</dt><dd>${aud.salones.reduce((t, s) => t + (Number(s.area2026) || 0), 0).toFixed(1)}</dd>
+    <dt>Cupos proyectados por salón 2026</dt><dd>${aud.salones.reduce((t, s) => t + (Number(s.cupos2026) || 0), 0)}</dd>
+    <dt>Equipo base Ago 2026</dt><dd>${suma(aud.talentoHumano, "ago2026")} personas</dd>
+    <dt>Cupos asignados Ago 2026</dt><dd>${aud.cobertura["Cupos asignados"].ago2026 || "—"}</dd>
+    <dt>Niños/as priorizados</dt><dd>${Object.values(aud.priorizacion).reduce((t, v) => t + (Number(v) || 0), 0)}</dd>
+    <dt>Anexos fotográficos</dt><dd>${aud.anexos.length}</dd>`;
+  const m = $("envio-msg");
+  if (pendientes.length) { m.className = "aviso aviso-info"; m.textContent = "Módulos sin completar: " + pendientes.join(", ") + ". Puedes enviar de todas formas."; }
+  else { m.className = "aviso aviso-ok"; m.textContent = "Todos los módulos tienen información."; }
+  m.classList.remove("oculto");
+}
+
+async function enviar() {
+  aud.observaciones = $("in-observaciones").value.trim();
+  aud.fin = new Date().toISOString();
+  guardarBorrador();
+
+  if (!API_URL) {
+    const blob = new Blob([JSON.stringify(aud, null, 2)], { type: "application/json" });
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = `acompanamiento_${aud.codigo}_${aud.fin.slice(0, 16).replace(/[:T]/g, "-")}.json`;
+    a.click();
+    finalizar({ ok: true, visitaId: "LOCAL", anexos: aud.anexos.map(x => ({ consecutivo: x.consecutivoLocal })) });
+    return;
+  }
+
+  cargando(true, `Enviando ${aud.anexos.length} foto(s) y el formulario…`);
+  $("btn-enviar").disabled = true;
+  try {
+    const res = await api({ action: "guardarAcompanamiento", usuario: sesion.usuario, acompanamiento: aud });
+    if (!res.ok) throw new Error(res.error || "No se pudo guardar.");
+    finalizar(res);
+  } catch (e) {
+    const m = $("envio-msg"); m.className = "aviso aviso-error";
+    m.textContent = "No se envió: " + e.message + " El borrador sigue guardado en el dispositivo; intenta de nuevo con conexión.";
+    m.classList.remove("oculto");
+  } finally { cargando(false); $("btn-enviar").disabled = false; }
+}
+
+function finalizar(res) {
+  store.del(CLAVE_BORRADOR);
+  $("fin-detalle").innerHTML = `<b>${aud.codigo} · ${aud.jardin}</b><br>Visita ${res.visitaId} registrada por ${sesion.nombre}.`;
+  $("fin-anexos").innerHTML = res.anexos && res.anexos.length
+    ? "<p class='ayuda'>Consecutivos asignados:</p>" + res.anexos.map(a => `<span class="chip">${a.consecutivo}</span> `).join("")
+    : "";
+  aud = null;
+  mostrar("p-fin");
+}
+
+/* ---------- Dashboard de seguimiento ---------- */
+const CIRC = 2 * Math.PI * 52; // circunferencia del anillo (r=52)
+
+async function abrirDashboard() {
+  mostrar("p-dashboard");
+  const cont = $("dash-cuerpo");
+  cont.innerHTML = '<p class="ayuda">Cargando seguimiento…</p>';
+  if (!API_URL) { cont.innerHTML = '<div class="aviso aviso-info">El seguimiento requiere el backend configurado.</div>'; return; }
+  try {
+    const res = await api({ action: "resumen" });
+    if (!res.ok) throw new Error(res.error || "No se pudo cargar el seguimiento.");
+    pintarDashboard(res.visitas || []);
+  } catch (e) {
+    cont.innerHTML = '<div class="aviso aviso-error">' + e.message + "</div>";
+  }
+}
+
+function pintarDashboard(visitas) {
+  const totJardines = JARDINES.length;
+  const codigosVisitados = new Set(visitas.map(v => String(v.codigo)));
+  const jardinesCubiertos = codigosVisitados.size;
+  const avance = totJardines ? Math.round(jardinesCubiertos / totJardines * 100) : 0;
+
+  const porLoc = LOCALIDADES.map(loc => {
+    const total = JARDINES.filter(j => j.localidad === loc).length;
+    const cub = new Set(visitas.filter(v => v.localidad === loc).map(v => String(v.codigo))).size;
+    return { loc, total, cub, pct: total ? Math.round(cub / total * 100) : 0 };
+  }).sort((a, b) => b.pct - a.pct || a.loc.localeCompare(b.loc));
+
+  const localidadesCubiertas = porLoc.filter(l => l.cub > 0).length;
+  const recientes = [...visitas].sort((a, b) => String(b.fecha).localeCompare(String(a.fecha))).slice(0, 8);
+
+  const offset = CIRC * (1 - avance / 100);
+  const filtro = j => j.localidad;
+
+  const barras = porLoc.map(l => {
+    const clase = l.pct === 100 ? "full" : (l.cub === 0 ? "cero" : "");
+    return `<div class="barra-loc">
+      <div class="fila"><span>${l.loc}</span><span class="cnt">${l.cub}/${l.total} · ${l.pct}%</span></div>
+      <div class="pista"><i class="${clase}" style="width:${Math.max(l.pct, l.cub ? 4 : 0)}%"></i></div>
+    </div>`;
+  }).join("");
+
+  const listaRecientes = recientes.length
+    ? recientes.map(v => `<div class="reciente">
+        <span><b>${v.codigo}</b> · ${(v.jardin || "").replace("JARDIN INFANTIL NOCTURNO-", "")}</span>
+        <span class="meta">${(v.localidad || "")}<br>${fmtFecha(v.fecha)}</span>
+      </div>`).join("")
+    : '<p class="ayuda">Aún no hay visitas registradas.</p>';
+
+  $("dash-cuerpo").innerHTML = `
+    <div class="dash-top">
+      <div class="anillo">
+        <svg width="120" height="120" viewBox="0 0 120 120">
+          <circle cx="60" cy="60" r="52" fill="none" stroke="rgba(255,255,255,.22)" stroke-width="12"></circle>
+          <circle cx="60" cy="60" r="52" fill="none" stroke="#FFC72C" stroke-width="12" stroke-linecap="round"
+            stroke-dasharray="${CIRC.toFixed(1)}" stroke-dashoffset="${offset.toFixed(1)}"></circle>
+        </svg>
+        <div class="centro"><b>${avance}%</b><small>de avance</small></div>
+      </div>
+      <div class="lado">
+        <h2>Seguimiento de acompañamientos</h2>
+        <p>${jardinesCubiertos} de ${totJardines} jardines acompañados al menos una vez.</p>
+      </div>
+    </div>
+
+    <div class="kpis">
+      <div class="kpi"><b>${visitas.length}</b><small>visitas realizadas</small></div>
+      <div class="kpi"><b>${jardinesCubiertos}</b><small>jardines cubiertos</small></div>
+      <div class="kpi"><b>${localidadesCubiertas}/${LOCALIDADES.length}</b><small>localidades</small></div>
+    </div>
+
+    <div class="tarjeta">
+      <h2>Avance por localidad</h2>
+      <p class="ayuda">Jardines acompañados frente al total de cada localidad.</p>
+      ${barras}
+    </div>
+
+    <div class="tarjeta">
+      <h2>Últimas visitas</h2>
+      ${listaRecientes}
+    </div>`;
+}
+
+function fmtFecha(f) {
+  const s = String(f || "");
+  return s.length >= 16 ? s.slice(0, 16).replace("T", " ") : s;
+}
+
+/* ---------- Eventos ---------- */
+document.addEventListener("DOMContentLoaded", () => {
+  poblarLocalidades();
+  $("btn-login").onclick = login;
+  $("in-clave").addEventListener("keydown", e => { if (e.key === "Enter") login(); });
+  $("btn-salir").onclick = salir;
+  $("sel-localidad").onchange = cambioLocalidad;
+  $("sel-jardin").onchange = cambioJardin;
+  $("btn-iniciar").onclick = iniciar;
+  $("btn-continuar-borrador").onclick = continuarBorrador;
+  $("btn-descartar-borrador").onclick = descartarBorrador;
+  $("btn-agregar-salon").onclick = agregarSalon;
+  $("ax-foto").addEventListener("change", fotoSeleccionada);
+  $("btn-agregar-anexo").onclick = agregarAnexo;
+  $("btn-enviar").onclick = enviar;
+  $("btn-nueva").onclick = irASeleccion;
+  $("btn-ver-dash").onclick = abrirDashboard;
+  $("btn-dash-actualizar").onclick = abrirDashboard;
+  $("btn-dash-volver").onclick = irASeleccion;
+  $("btn-ant").onclick = () => irModulo(Math.max(1, modActual - 1));
+  $("btn-sig").onclick = () => irModulo(Math.min(MODULOS.length, modActual + 1));
+  $("in-observaciones").addEventListener("input", e => { if (aud) { aud.observaciones = e.target.value; guardarBorrador(); } });
+
+  const s = store.get(CLAVE_SESION);
+  if (s && s.usuario) { sesion = s; irASeleccion(); }
+});
+</script>
+</body>
+</html>
