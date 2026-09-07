@@ -663,15 +663,21 @@ async function iniciar() {
   abrirAcompanamiento();
 }
 
-// Toma la estructura nueva y le copia los datos de la visita anterior (sin sus metadatos ni las alertas)
+// Toma la estructura nueva y le copia los datos de la visita anterior (merge seguro, sin metadatos ni alertas)
 function fusionarPrevio(j, prev) {
   const nuevo = nuevoAcompanamiento(j);
-  if (Array.isArray(prev.salones) && prev.salones.length) nuevo.salones = prev.salones;
-  if (prev.talentoHumano) nuevo.talentoHumano = prev.talentoHumano;
-  if (prev.transversal) nuevo.transversal = prev.transversal;
-  if (prev.cobertura) nuevo.cobertura = prev.cobertura;
-  if (prev.priorizacion) nuevo.priorizacion = prev.priorizacion;
-  if (prev.instrumento) nuevo.instrumento = prev.instrumento;
+  prev = prev || {};
+  if (Array.isArray(prev.salones) && prev.salones.length) {
+    nuevo.salones = prev.salones.map((s, i) => ({
+      nombre: s.nombre || ("Salón " + (i + 1)),
+      area2025: s.area2025 || "", cupos2025: s.cupos2025 || "", area2026: s.area2026 || "", cupos2026: s.cupos2026 || ""
+    }));
+  }
+  PERFILES.forEach(p => { if (prev.talentoHumano && prev.talentoHumano[p]) nuevo.talentoHumano[p] = Object.assign(nuevo.talentoHumano[p], prev.talentoHumano[p]); });
+  EQUIPOS.forEach(e => { if (prev.transversal && prev.transversal[e]) nuevo.transversal[e] = Object.assign(nuevo.transversal[e], prev.transversal[e]); });
+  COBERTURA.forEach(c => { if (prev.cobertura && prev.cobertura[c]) nuevo.cobertura[c] = Object.assign(nuevo.cobertura[c], prev.cobertura[c]); });
+  PRIORIZACION.forEach(p => { if (prev.priorizacion && prev.priorizacion[p] !== undefined) nuevo.priorizacion[p] = prev.priorizacion[p]; });
+  if (prev.instrumento && typeof prev.instrumento === "object") nuevo.instrumento = prev.instrumento;
   if (prev.equipoObservaciones) nuevo.equipoObservaciones = prev.equipoObservaciones;
   if (prev.observaciones) nuevo.observaciones = prev.observaciones;
   // Las alertas (fotos) no se precargan: son evidencias propias de cada visita.
