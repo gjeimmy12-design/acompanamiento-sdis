@@ -308,7 +308,7 @@
     <div class="modulo oculto" data-mod="3">
       <div class="tarjeta">
         <h2>3. Equipo de Apoyo</h2>
-        <p class="ayuda">Fecha de la última visita y número de visitas en los últimos dos meses.</p>
+        <p class="ayuda">Fecha de la última visita, número de visitas en los últimos dos meses y personas asociadas a cada equipo.</p>
         <div id="lista-transversal"></div>
       </div>
     </div>
@@ -629,7 +629,7 @@ function cambioJardin() {
 
 function nuevoAcompanamiento(j) {
   const th = {}; PERFILES.forEach(p => { th[p] = { oct2025: "", feb2026: "", ago2026: "", personas: [] }; });
-  const tr = {}; EQUIPOS.forEach(e => { tr[e] = { ultimaVisita: "", visitas2Meses: "" }; });
+  const tr = {}; EQUIPOS.forEach(e => { tr[e] = { ultimaVisita: "", visitas2Meses: "", numPersonas: "", personas: [] }; });
   const cob = {}; COBERTURA.forEach(c => { cob[c] = { oct2024: "", feb2026: "", ago2026: "" }; });
   cob["Cupos proyectados"].ago2026 = String(j.cupos);
   const pr = {}; PRIORIZACION.forEach(p => { pr[p] = ""; });
@@ -643,12 +643,39 @@ function nuevoAcompanamiento(j) {
   };
 }
 
-function iniciar() {
+async function iniciar() {
   const j = JARDINES.find(x => x.codigo === $("sel-jardin").value);
   if (!j) return;
-  aud = nuevoAcompanamiento(j);
+  let base = nuevoAcompanamiento(j);
+  if (API_URL) {
+    cargando(true, "Buscando visitas anteriores de este jardín…");
+    try {
+      const res = await api({ action: "cargarUltima", codigo: j.codigo });
+      if (res.ok && res.existe && res.acompanamiento) {
+        base = fusionarPrevio(j, res.acompanamiento);
+        base.__precargado = res.fecha || "";
+      }
+    } catch (e) { /* si falla, se inicia en blanco */ }
+    finally { cargando(false); }
+  }
+  aud = base;
   guardarBorrador();
   abrirAcompanamiento();
+}
+
+// Toma la estructura nueva y le copia los datos de la visita anterior (sin sus metadatos ni las alertas)
+function fusionarPrevio(j, prev) {
+  const nuevo = nuevoAcompanamiento(j);
+  if (Array.isArray(prev.salones) && prev.salones.length) nuevo.salones = prev.salones;
+  if (prev.talentoHumano) nuevo.talentoHumano = prev.talentoHumano;
+  if (prev.transversal) nuevo.transversal = prev.transversal;
+  if (prev.cobertura) nuevo.cobertura = prev.cobertura;
+  if (prev.priorizacion) nuevo.priorizacion = prev.priorizacion;
+  if (prev.instrumento) nuevo.instrumento = prev.instrumento;
+  if (prev.equipoObservaciones) nuevo.equipoObservaciones = prev.equipoObservaciones;
+  if (prev.observaciones) nuevo.observaciones = prev.observaciones;
+  // Las alertas (fotos) no se precargan: son evidencias propias de cada visita.
+  return nuevo;
 }
 
 function continuarBorrador() { aud = store.get(CLAVE_BORRADOR); if (aud) abrirAcompanamiento(); }
@@ -660,7 +687,10 @@ function abrirAcompanamiento() {
   aud.instrumento = aud.instrumento || {};
   aud.equipoObservaciones = aud.equipoObservaciones || "";
   PERFILES.forEach(p => { if (aud.talentoHumano[p] && !Array.isArray(aud.talentoHumano[p].personas)) aud.talentoHumano[p].personas = []; });
-  $("acomp-encabezado").innerHTML = `<b>${aud.codigo} · ${aud.jardin}</b><br>${aud.localidad} · Proyección 2026: ${aud.cuposProyectados2026} cupos`;
+  EQUIPOS.forEach(e => { const t = aud.transversal[e]; if (t) { if (!Array.isArray(t.personas)) t.personas = []; if (t.numPersonas === undefined) t.numPersonas = ""; } });
+  let cab = `<b>${aud.codigo} · ${aud.jardin}</b><br>${aud.localidad} · Proyección 2026: ${aud.cuposProyectados2026} cupos`;
+  if (aud.__precargado) cab += `<br><span style="color:var(--verde);font-weight:700">✓ Datos precargados de la última visita (${fmtFecha(aud.__precargado)}). Revisa y actualiza; al enviar se guarda como visita nueva sin borrar la anterior.</span>`;
+  $("acomp-encabezado").innerHTML = cab;
   renderModulos(); renderSalones(); renderTalento(); renderTransversal(); renderCobertura(); renderPriorizacion(); renderInstrumento(); renderAnexos();
   $("in-observaciones").value = aud.observaciones || "";
   irModulo(1);
@@ -793,16 +823,50 @@ function renderPersonas(p, i) {
 /* Módulo 3 */
 function renderTransversal() {
   const c = $("lista-transversal"); c.innerHTML = "";
-  EQUIPOS.forEach(eq => {
+  EQUIPOS.forEach((eq, i) => {
+    const v = aud.transversal[eq];
     const d = document.createElement("div"); d.className = "salon";
     d.innerHTML = `<div class="enc"><b>${eq}</b></div>
       <div class="g2">
-        <label class="campo"><span>Fecha de la última visita</span><input type="date" data-e="${eq}" data-k="ultimaVisita" value="${aud.transversal[eq].ultimaVisita}"></label>
-        <label class="campo"><span>Visitas en los últimos 2 meses</span><input type="number" inputmode="numeric" min="0" data-e="${eq}" data-k="visitas2Meses" value="${aud.transversal[eq].visitas2Meses}"></label>
-      </div>`;
+        <label class="campo"><span>Fecha de la última visita</span><input type="date" data-e="${eq}" data-k="ultimaVisita" value="${v.ultimaVisita || ""}"></label>
+        <label class="campo"><span>Visitas en los últimos 2 meses</span><input type="number" inputmode="numeric" min="0" data-e="${eq}" data-k="visitas2Meses" value="${v.visitas2Meses || ""}"></label>
+      </div>
+      <label class="campo" style="margin-top:10px"><span>Número de personas del equipo</span><input type="number" inputmode="numeric" min="0" max="30" data-np="${eq}" value="${v.numPersonas || ""}"></label>
+      <div class="personas-tit">Personas</div>
+      <div class="personas" id="apoyo-personas-${i}"></div>`;
     c.appendChild(d);
+    renderPersonasApoyo(eq, i);
   });
-  c.querySelectorAll("input").forEach(i => i.addEventListener("input", e => { aud.transversal[e.target.dataset.e][e.target.dataset.k] = e.target.value; guardarBorrador(); }));
+  c.querySelectorAll("input[data-k]").forEach(inp => inp.addEventListener("input", e => {
+    aud.transversal[e.target.dataset.e][e.target.dataset.k] = e.target.value; guardarBorrador();
+  }));
+  c.querySelectorAll("input[data-np]").forEach(inp => inp.addEventListener("input", e => {
+    aud.transversal[e.target.dataset.np].numPersonas = e.target.value; guardarBorrador();
+    renderPersonasApoyo(e.target.dataset.np, EQUIPOS.indexOf(e.target.dataset.np));
+  }));
+}
+
+function renderPersonasApoyo(eq, i) {
+  const cont = $("apoyo-personas-" + i);
+  if (!cont) return;
+  const v = aud.transversal[eq];
+  const n = Math.max(0, Math.min(30, Number(v.numPersonas) || 0));
+  v.personas = v.personas || [];
+  while (v.personas.length < n) v.personas.push({ nombre: "", cedula: "" });
+  if (v.personas.length > n) v.personas = v.personas.slice(0, n);
+  if (!n) { cont.innerHTML = '<p class="ayuda" style="margin:0">Indica el número de personas para habilitar las casillas de nombre y cédula.</p>'; guardarBorrador(); return; }
+  cont.innerHTML = '<div class="personas-cab"><span>Nombre completo (nombre y apellido)</span><span>Cédula</span></div>' +
+    v.personas.map((per, k) => `<div class="persona-fila">
+      <input type="text" placeholder="Nombre y apellido" data-ap="${eq}" data-idx="${k}" data-campo="nombre" value="${(per.nombre || "").replace(/"/g, "&quot;")}">
+      <input type="text" inputmode="numeric" placeholder="Cédula" data-ap="${eq}" data-idx="${k}" data-campo="cedula" value="${per.cedula || ""}">
+    </div>`).join("");
+  cont.querySelectorAll("input").forEach(inp => inp.addEventListener("input", e => {
+    const per = aud.transversal[e.target.dataset.ap].personas[Number(e.target.dataset.idx)];
+    if (e.target.dataset.campo === "cedula") { e.target.value = e.target.value.replace(/[^0-9]/g, ""); per.cedula = e.target.value; }
+    else per.nombre = e.target.value;
+    guardarBorrador();
+  }));
+  guardarBorrador();
 }
 
 /* Módulo 4 */
@@ -1036,6 +1100,7 @@ async function enviar() {
     instrumentoEnvio[cod] = { estado: v.estado || "", hallazgo: (v.hallazgo || "").trim(), componente: meta.comp || "", tabla: meta.tab || "", nombreTabla: meta.nom || "" };
   });
   const envio = Object.assign({}, aud, { instrumento: instrumentoEnvio });
+  delete envio.__precargado;
 
   if (!API_URL) {
     const blob = new Blob([JSON.stringify(envio, null, 2)], { type: "application/json" });
