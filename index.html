@@ -131,6 +131,7 @@
 
   .anexo{display:flex;gap:12px;border:1px solid var(--linea);border-radius:10px;padding:10px;margin-bottom:10px;background:#fff}
   .anexo img{width:84px;height:84px;object-fit:cover;border-radius:8px;flex:none;background:var(--fondo)}
+  .anexo-sinfoto{width:84px;height:84px;border-radius:8px;flex:none;background:var(--fondo);display:grid;place-items:center;font-size:11px;color:var(--tinta-2);text-align:center}
   .anexo .txt{flex:1;min-width:0;font-size:14px}
   .anexo .txt b{display:block;color:var(--azul)}
   .anexo .txt small{color:var(--tinta-2)}
@@ -363,7 +364,7 @@
     <div class="modulo oculto" data-mod="7">
       <div class="tarjeta">
         <h2>7. Alertas</h2>
-        <p class="ayuda">Condiciones inseguras, novedades de infraestructura y conceptos higiénico-sanitarios. Cada foto recibe un consecutivo del jardín al enviarse.</p>
+        <p class="ayuda">Condiciones inseguras, novedades de infraestructura y conceptos higiénico-sanitarios. La foto es opcional: puedes guardar una alerta solo con texto.</p>
         <label class="campo"><span>Tipo de novedad</span>
           <select id="ax-categoria">
             <option>Condición insegura</option>
@@ -391,7 +392,7 @@
           <input id="ax-foto" type="file" accept="image/*" capture="environment">
         </label>
         <img id="ax-previa" class="vista-previa oculto" alt="Vista previa de la foto">
-        <button id="btn-agregar-anexo" class="btn btn-primario" type="button" style="margin-top:12px" disabled>Guardar alerta</button>
+        <button id="btn-agregar-anexo" class="btn btn-primario" type="button" style="margin-top:12px">Guardar alerta</button>
       </div>
       <div class="tarjeta">
         <h2>Alertas registradas <span id="ax-conteo" class="chip">0</span></h2>
@@ -441,7 +442,7 @@
    Si queda vacía, la app funciona en modo local y descarga el
    resultado como archivo JSON en lugar de enviarlo.
    ========================================================= */
-const APP_VERSION = "2026-09-08-manual-fuente";
+const APP_VERSION = "2026-09-08-alertas-precarga-usuario";
 const API_URL = "https://script.google.com/macros/s/AKfycbyaYVW6HSSqTLBgdNN78jNM2-cN0DGH_oAsIhsBE3TEmBDPr0RstKY4TMNigg7-3u0/exec";
 
 /* ---------- Catálogo de jardines ---------- */
@@ -684,7 +685,7 @@ async function iniciar() {
   if (API_URL) {
     cargando(true, "Buscando visitas anteriores de este jardín…");
     try {
-      const res = await api({ action: "cargarUltima", codigo: j.codigo });
+      const res = await api({ action: "cargarUltima", codigo: j.codigo, usuario: sesion.usuario });
       if (res.ok && res.existe && res.acompanamiento) {
         base = fusionarPrevio(j, res.acompanamiento);
         base.__precargado = res.fecha || "";
@@ -1109,7 +1110,6 @@ async function fotoSeleccionada(e) {
     fotoPendiente = await leerFoto(f);
     $("ax-previa").src = fotoPendiente; $("ax-previa").classList.remove("oculto");
     $("captura-texto").textContent = "📷 Tomar otra foto";
-    $("btn-agregar-anexo").disabled = false;
   } catch (err) { alert(err.message); }
   e.target.value = "";
 }
@@ -1121,8 +1121,9 @@ function alCambiarCategoria() {
 }
 
 function agregarAnexo() {
-  if (!fotoPendiente) return;
   const cat = $("ax-categoria").value;
+  const desc = $("ax-descripcion").value.trim();
+  if (!fotoPendiente && !desc) { alert("Escribe una descripción o toma una foto para guardar la alerta."); return; }
   if (esConcepto(cat)) {
     if (!$("ax-concepto").value) { alert("Selecciona el concepto (Favorable, Desfavorable o Favorable con requerimientos)."); return; }
     if (!$("ax-fecha-concepto").value) { alert("Indica la fecha de visita asociada al concepto."); return; }
@@ -1133,15 +1134,14 @@ function agregarAnexo() {
     categoria: cat,
     concepto: esConcepto(cat) ? $("ax-concepto").value : "",
     fechaConcepto: esConcepto(cat) ? $("ax-fecha-concepto").value : "",
-    descripcion: $("ax-descripcion").value.trim(),
+    descripcion: desc,
     fecha: new Date().toISOString(),
-    foto: fotoPendiente
+    foto: fotoPendiente || ""
   });
   fotoPendiente = null;
   $("ax-previa").classList.add("oculto"); $("ax-previa").src = "";
   $("ax-descripcion").value = ""; $("captura-texto").textContent = "📷 Tomar foto con la cámara";
   $("ax-concepto").value = ""; $("ax-fecha-concepto").value = "";
-  $("btn-agregar-anexo").disabled = true;
   guardarBorrador(); renderAnexos();
 }
 
@@ -1151,7 +1151,7 @@ function renderAnexos() {
   if (!aud.anexos.length) { c.innerHTML = '<p class="ayuda">Aún no hay alertas en esta visita.</p>'; return; }
   aud.anexos.forEach((a, i) => {
     const d = document.createElement("div"); d.className = "anexo";
-    d.innerHTML = `<img src="${a.foto}" alt="Anexo ${a.consecutivoLocal}">
+    d.innerHTML = `${a.foto ? `<img src="${a.foto}" alt="Alerta ${a.consecutivoLocal}">` : `<div class="anexo-sinfoto">Sin foto</div>`}
       <div class="txt"><b>${a.consecutivoLocal}</b>${a.descripcion || "<i>Sin descripción</i>"}<br><span class="chip">${a.categoria}</span>${a.concepto ? ` <span class="chip">${a.concepto}</span>` : ""}${a.fechaConcepto ? ` <span class="chip">Visita: ${a.fechaConcepto}</span>` : ""}</div>
       <button class="btn btn-peligro btn-peq" type="button" data-i="${i}">Quitar</button>`;
     c.appendChild(d);
