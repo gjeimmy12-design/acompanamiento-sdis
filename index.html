@@ -324,7 +324,7 @@
         <h2>4. Cobertura</h2>
         <p class="ayuda">La proyección 2026 se precarga con el dato oficial; puedes ajustarla si el jardín reporta otro valor.</p>
         <table class="tabla" id="tabla-cobertura">
-          <thead><tr><th>Indicador</th><th>Oct 2024</th><th>Feb 2026</th><th>Ago 2026</th></tr></thead>
+          <thead><tr><th>Indicador</th><th>Oct 2025</th><th>Feb 2026</th><th>Ago 2026</th></tr></thead>
           <tbody></tbody>
         </table>
       </div>
@@ -503,7 +503,7 @@ const PERFILES = ["Responsable", "Profesional de atención a la primera infancia
 const CORTES_TH = [["oct2025", "Oct 2025"], ["feb2026", "Feb 2026"], ["ago2026", "Ago 2026"]];
 const EQUIPOS = ["Equipo Entre Pares/ Educadoras Especiales", "Equipo Psicosocial", "Nutricionistas - Enfermeras"];
 const COBERTURA = ["Cupos proyectados", "Cupos asignados", "Asistencia promedio"];
-const CORTES_COB = [["oct2024", "Oct 2024"], ["feb2026", "Feb 2026"], ["ago2026", "Ago 2026"]];
+const CORTES_COB = [["oct2025", "Oct 2025"], ["feb2026", "Feb 2026"], ["ago2026", "Ago 2026"]];
 const PRIORIZACION = ["Discapacidad", "Etnias", "Víctimas", "Desnutrición"];
 const MODULOS = ["Plantas físicas", "Talento humano", "Equipo de Apoyo", "Cobertura", "Priorización", "Manual", "Alertas", "Enviar"];
 const BANDAS = ["0% a 30%", "31% a 60%", "61% a 80%", "81% a 100%"];
@@ -657,7 +657,7 @@ function cambioJardin() {
 function nuevoAcompanamiento(j) {
   const th = {}; PERFILES.forEach(p => { th[p] = { oct2025: "", feb2026: "", ago2026: "", personas: [] }; });
   const tr = {}; EQUIPOS.forEach(e => { tr[e] = { ultimaVisita: "", visitas2Meses: "", numPersonas: "", personas: [] }; });
-  const cob = {}; COBERTURA.forEach(c => { cob[c] = { oct2024: "", feb2026: "", ago2026: "" }; });
+  const cob = {}; COBERTURA.forEach(c => { cob[c] = { oct2025: "", feb2026: "", ago2026: "" }; });
   cob["Cupos proyectados"].ago2026 = String(j.cupos);
   const pr = {}; PRIORIZACION.forEach(p => { pr[p] = ""; });
   return {
