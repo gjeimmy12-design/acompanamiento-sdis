@@ -442,7 +442,7 @@
    Si queda vacía, la app funciona en modo local y descarga el
    resultado como archivo JSON en lugar de enviarlo.
    ========================================================= */
-const APP_VERSION = "2026-09-08-alertas-precarga-usuario";
+const APP_VERSION = "2026-09-08-borrador-por-usuario";
 const API_URL = "https://script.google.com/macros/s/AKfycbyaYVW6HSSqTLBgdNN78jNM2-cN0DGH_oAsIhsBE3TEmBDPr0RstKY4TMNigg7-3u0/exec";
 
 /* ---------- Catálogo de jardines ---------- */
@@ -547,7 +547,8 @@ async function cargarManualRemoto() {
 
 /* ---------- Estado ---------- */
 const CLAVE_SESION = "sdis_acomp_sesion";
-const CLAVE_BORRADOR = "sdis_acomp_borrador";
+const CLAVE_BORRADOR_BASE = "sdis_acomp_borrador";
+function claveBorrador() { return CLAVE_BORRADOR_BASE + "::" + (sesion && sesion.usuario ? String(sesion.usuario).trim().toLowerCase() : "anon"); }
 let sesion = null;      // {usuario, nombre, rol}
 let aud = null;         // acompañamiento en curso
 let modActual = 1;
@@ -629,7 +630,7 @@ function salir() {
 /* ---------- Selección ---------- */
 function irASeleccion() {
   $("cab-titulo").textContent = `${sesion.nombre} · ${sesion.rol}`;
-  const bor = store.get(CLAVE_BORRADOR);
+  const bor = store.get(claveBorrador());
   if (bor && bor.codigo) {
     $("borrador-jardin").textContent = `${bor.codigo} · ${bor.jardin}`;
     $("borrador-aviso").classList.remove("oculto");
@@ -723,9 +724,9 @@ function fusionarPrevio(j, prev) {
   return nuevo;
 }
 
-function continuarBorrador() { aud = store.get(CLAVE_BORRADOR); if (aud) abrirAcompanamiento(); }
-function descartarBorrador() { store.del(CLAVE_BORRADOR); $("borrador-aviso").classList.add("oculto"); }
-function guardarBorrador() { if (aud) { store.set(CLAVE_BORRADOR, aud); $("acomp-estado").textContent = "Borrador guardado en este dispositivo"; } }
+function continuarBorrador() { aud = store.get(claveBorrador()); if (aud) abrirAcompanamiento(); }
+function descartarBorrador() { store.del(claveBorrador()); $("borrador-aviso").classList.add("oculto"); }
+function guardarBorrador() { if (aud) { store.set(claveBorrador(), aud); $("acomp-estado").textContent = "Borrador guardado en este dispositivo"; } }
 
 /* ---------- Acompañamiento ---------- */
 function abrirAcompanamiento() {
@@ -1225,7 +1226,7 @@ async function enviar() {
 }
 
 function finalizar(res) {
-  store.del(CLAVE_BORRADOR);
+  store.del(claveBorrador());
   $("fin-detalle").innerHTML = `<b>${aud.codigo} · ${aud.jardin}</b><br>Visita ${res.visitaId} registrada por ${sesion.nombre}.`;
   $("fin-anexos").innerHTML = res.anexos && res.anexos.length
     ? "<p class='ayuda'>Consecutivos asignados:</p>" + res.anexos.map(a => `<span class="chip">${a.consecutivo}</span> `).join("")
