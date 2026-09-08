@@ -524,6 +524,7 @@ indexarInstrumento();
 
 // Carga las preguntas del Manual desde el Sheet (fuente). Si falla, usa el catálogo incrustado como respaldo.
 let manualCargado = false;
+let manualMotivo = "";
 async function cargarManualRemoto() {
   if (manualCargado || !API_URL) return;
   try {
@@ -534,9 +535,13 @@ async function cargarManualRemoto() {
         INSTRUMENTO.componentes = res.componentes;
         indexarInstrumento();
         manualCargado = true;
-      }
+      } else { manualMotivo = "el Sheet respondió sin preguntas"; }
+    } else if (res && res.ok === false) {
+      manualMotivo = res.error || "el servicio no reconoce la acción 'manual' (backend desactualizado)";
+    } else {
+      manualMotivo = "respuesta inesperada del servicio";
     }
-  } catch (e) { /* respaldo: catálogo incrustado */ }
+  } catch (e) { manualMotivo = "no hubo conexión: " + e.message; }
 }
 
 /* ---------- Estado ---------- */
@@ -989,7 +994,7 @@ async function renderInstrumento() {
   const f = $("inst-fuente");
   if (f) f.innerHTML = manualCargado
     ? `✓ ${TOTAL_ITEMS} preguntas cargadas desde el Sheet · app ${APP_VERSION}`
-    : `⚠ Usando catálogo de respaldo (${TOTAL_ITEMS} preguntas). No se pudo leer el Sheet · app ${APP_VERSION}`;
+    : `⚠ Respaldo (${TOTAL_ITEMS} preguntas). Motivo: ${manualMotivo || "desconocido"} · app ${APP_VERSION}`;
 }
 
 function renderInstrumentoUI() {
