@@ -265,7 +265,22 @@
   .cargando .aro{width:44px;height:44px;border:4px solid rgba(255,255,255,.3);border-top-color:var(--amarillo);border-radius:50%;animation:gira 1s linear infinite;margin:0 auto 12px}
   @keyframes gira{to{transform:rotate(360deg)}}
   @media (prefers-reduced-motion:reduce){.cargando .aro{animation:none}}
+  /* --- Ajustes tablero 2026-09-10 --- */
+  .tc-loc-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;padding:0 16px 14px}
+  @media (max-width:640px){.tc-loc-grid{grid-template-columns:1fr}}
+  .tc-loc-card{border:1px solid var(--linea);border-radius:12px;padding:10px 12px;background:#fff}
+  .tc-loc-card .n{font-weight:800;color:var(--azul);font-size:13px;margin-bottom:6px}
+  .tc-loc-card .barra{height:8px;border-radius:999px;background:var(--fondo);overflow:hidden;margin:6px 0}
+  .tc-loc-card .barra i{display:block;height:100%;background:var(--verde);border-radius:999px}
+  .tc-loc-card small{color:var(--tinta-2);font-size:11px}
+  .tc-cab-acciones{margin-left:auto;display:flex;gap:8px}
+  .btn-excel{width:auto;min-height:34px;padding:6px 12px;font-size:13px;background:var(--verde);color:#fff;border:none;border-radius:8px;font-weight:800;cursor:pointer;display:inline-flex;align-items:center;gap:6px}
+  .btn-excel:hover{filter:brightness(1.05)}
+  .tc-tabla th.grp{text-align:center;background:var(--azul);color:#fff}
+  .tc-tabla th.sub{font-size:11px}
+  .tc-link{color:var(--azul-2);font-size:11px;word-break:break-all;text-decoration:underline}
 </style>
+<script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
 </head>
 <body>
 
@@ -1495,9 +1510,22 @@ function fmtFecha(f) {
    TABLERO DE CONTROL ESTRATÉGICO-TÁCTICO
    ================================================================ */
 let TC = null; // datos del tablero
+let TC_EXPORT = { th: [], cob: [], alertas: [], pendAlertas: [] }; // datos listos para exportar a Excel
 let tcFiltroLoc = "";
 let tcFiltroJar = "";
 let tcFiltroAlertaCat = ""; // categoría de alerta seleccionada
+
+// Perfiles del cuadro de Talento Humano (equipo base + transversal), en el orden solicitado.
+// clave = nombre tal cual llega del backend; etiqueta = encabezado de columna.
+const TC_PERFILES = [
+  { clave: "Responsable", etq: "Responsable" },
+  { clave: "Profesional de atención a la primera infancia", etq: "Profesional de atención a la primera infancia" },
+  { clave: "Auxiliar pedagógico", etq: "Auxiliar pedagógico" },
+  { clave: "Auxiliar administrativo", etq: "Auxiliar administrativo" },
+  { clave: "Equipo Entre Pares / Educadoras Especiales", etq: "Educador especial / equipo entre pares" },
+  { clave: "Equipo Psicosocial", etq: "Psicosocial" },
+  { clave: "Nutricionistas - Enfermeras", etq: "Nutricionista / Enfermera" }
+];
 
 const ROL_TABLERO = "Estratégico - Táctico";
 
@@ -1532,79 +1560,145 @@ function pintarTablero() {
   const loc = tcFiltroLoc;
   const jar = tcFiltroJar;
 
-  // Calcular total visitas (filtradas si aplica)
-  let visitasMostradas = TC.totalVisitas;
-  // Si hay filtro, contar cuantas visitas corresponden
-  // (el backend no devuelve lista filtrada, pero si hay filtro de jardín podemos contarlo a partir de jardinesVisitados)
-  let jardinesFiltrados = TC.jardinesVisitados.filter(j => (!loc || j.localidad === loc) && (!jar || j.codigo === jar));
+  const limpiaNom = s => String(s || '').replace(/JARDIN INFANTIL NOCTURNO-?/i, '').trim();
+  const esc = s => String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 
-  // 1. Listas para filtros
-  const locOpts = TC.localidades.map(l => `<option value="${l}" ${l === loc ? 'selected' : ''}>${l}</option>`).join('');
+  // ---------- Filtros ----------
+  const locOpts = TC.localidades.map(l => `<option value="${esc(l)}" ${l === loc ? 'selected' : ''}>${esc(l)}</option>`).join('');
   const jarFiltrados = TC.jardinesVisitados.filter(j => !loc || j.localidad === loc);
-  const jarOpts = jarFiltrados.map(j => {
-    const nom = (j.jardin || j.codigo).replace(/JARDIN INFANTIL NOCTURNO-?/i, '').trim();
-    return `<option value="${j.codigo}" ${j.codigo === jar ? 'selected' : ''}>${j.codigo} · ${nom}</option>`;
-  }).join('');
+  const jarOpts = jarFiltrados.map(j => `<option value="${j.codigo}" ${j.codigo === jar ? 'selected' : ''}>${j.codigo} &middot; ${esc(limpiaNom(j.jardin) || j.codigo)}</option>`).join('');
+  const jardinesFiltrados = TC.jardinesVisitados.filter(j => (!loc || j.localidad === loc) && (!jar || j.codigo === jar));
+  const totalFiltroLabel = (loc || jar)
+    ? `(${jardinesFiltrados.length} jard\u00edn${jardinesFiltrados.length !== 1 ? 'es' : ''} en selecci\u00f3n)`
+    : `(${TC.jardinesVisitados.length} de ${JARDINES.length} jardines visitados)`;
 
-  // Contar visitas del filtro actual usando el consolidado de jardines
-  const codsEnFiltro = new Set(jardinesFiltrados.map(j => j.codigo));
-  // totalVisitas global siempre viene del backend; las filtradas las aproximamos
-  const totalFiltroLabel = loc || jar
-    ? `(${jardinesFiltrados.length} jardín${jardinesFiltrados.length !== 1 ? 'es' : ''} en selección)`
-    : `(${TC.jardinesVisitados.length} jardines visitados)`;
+  // ========== AJUSTE 2: avance de visitas ==========
+  const visSet = new Set(TC.jardinesVisitados.map(j => j.codigo));
+  const faltantesGlobal = JARDINES.filter(j => !visSet.has(j.codigo));
+  const visitadosGlobal = JARDINES.length - faltantesGlobal.length;
 
-  // 2. Talento Humano – unir TH base + transversal, filtrar
-  const thBase = TC.talentoHumano.filter(r => (!loc || r.localidad === loc) && (!jar || r.codigo === jar));
-  const thTr = TC.transversal.filter(r => (!loc || r.localidad === loc) && (!jar || r.codigo === jar));
-  // Consolidar por jardín + perfil/equipo
-  const thMap = {}; // clave: localidad||codigo||jardin||perfil -> cantidad
-  thBase.forEach(r => {
-    const k = `${r.localidad}||${r.codigo}||${r.jardin}||${r.perfil}`;
-    if (!thMap[k]) thMap[k] = { localidad: r.localidad, codigo: r.codigo, jardin: r.jardin, perfil: r.perfil, cantidad: 0 };
-    thMap[k].cantidad += r.cantidad;
+  // Desglose por localidad (respeta el filtro de localidad si hay uno)
+  const localidadesMostrar = loc ? [loc] : LOCALIDADES;
+  const porLoc = {};
+  localidadesMostrar.forEach(l => porLoc[l] = { total: 0, vis: 0, faltan: [] });
+  JARDINES.forEach(j => {
+    if (loc && j.localidad !== loc) return;
+    if (!porLoc[j.localidad]) porLoc[j.localidad] = { total: 0, vis: 0, faltan: [] };
+    porLoc[j.localidad].total++;
+    if (visSet.has(j.codigo)) porLoc[j.localidad].vis++;
+    else porLoc[j.localidad].faltan.push(j);
   });
-  thTr.forEach(r => {
-    const k = `${r.localidad}||${r.codigo}||${r.jardin}||${r.equipo}`;
-    if (!thMap[k]) thMap[k] = { localidad: r.localidad, codigo: r.codigo, jardin: r.jardin, perfil: r.equipo, cantidad: 0 };
-    thMap[k].cantidad += r.numPersonas;
-  });
-  const thRows = Object.values(thMap).sort((a, b) => a.codigo.localeCompare(b.codigo) || a.perfil.localeCompare(b.perfil));
+  const faltanEnVista = loc ? (porLoc[loc] ? porLoc[loc].faltan : []) : faltantesGlobal;
 
-  // 3. Cobertura
-  const cobRows = TC.cobertura.filter(r => (!loc || r.localidad === loc) && (!jar || r.codigo === jar))
-    .sort((a, b) => a.codigo.localeCompare(b.codigo) || a.indicador.localeCompare(b.indicador));
+  // ========== AJUSTE 3: Talento Humano (pivot por jard\u00edn) ==========
+  const thJard = {};
+  jardinesFiltrados.forEach(j => { thJard[j.codigo] = { localidad: j.localidad, codigo: j.codigo, jardin: j.jardin, obs: j.equipoObservaciones || '', per: {} }; });
+  TC.talentoHumano.forEach(r => { if (thJard[r.codigo]) thJard[r.codigo].per[r.perfil] = (thJard[r.codigo].per[r.perfil] || 0) + (r.cantidad || 0); });
+  TC.transversal.forEach(r => { if (thJard[r.codigo]) thJard[r.codigo].per[r.equipo] = (thJard[r.codigo].per[r.equipo] || 0) + (r.numPersonas || 0); });
+  const thRows = Object.values(thJard).sort((a, b) => a.localidad.localeCompare(b.localidad) || a.codigo.localeCompare(b.codigo));
 
-  // 4. Alertas
+  // ========== AJUSTE 4: Cobertura (pivot por periodo) ==========
+  const COB_IND = ["Cupos proyectados", "Cupos asignados", "Asistencia promedio"];
+  const COB_PER = [["oct2025", "Octubre 2025"], ["feb2026", "Febrero 2026"], ["ago2026", "Agosto 2026"]];
+  const cobJard = {};
+  jardinesFiltrados.forEach(j => { cobJard[j.codigo] = { localidad: j.localidad, codigo: j.codigo, jardin: j.jardin, ind: {} }; });
+  TC.cobertura.forEach(r => { if (cobJard[r.codigo]) cobJard[r.codigo].ind[r.indicador] = { oct2025: r.oct2025, feb2026: r.feb2026, ago2026: r.ago2026 }; });
+  const cobRows = Object.values(cobJard).filter(x => Object.keys(x.ind).length)
+    .sort((a, b) => a.localidad.localeCompare(b.localidad) || a.codigo.localeCompare(b.codigo));
+
+  // ========== AJUSTE 5: jardines sin diligenciar el m\u00f3dulo de alertas ==========
+  const alertaSet = new Set(TC.alertas.map(a => a.codigo));
+  const pendAlertas = jardinesFiltrados.filter(j => !alertaSet.has(j.codigo))
+    .sort((a, b) => a.localidad.localeCompare(b.localidad) || a.codigo.localeCompare(b.codigo));
+
+  // ========== AJUSTE 6: alertas (tabla con link de imagen) ==========
   const alertasFiltradas = TC.alertas.filter(r =>
     (!loc || r.localidad === loc) && (!jar || r.codigo === jar) && (!tcFiltroAlertaCat || r.categoria === tcFiltroAlertaCat)
   ).sort((a, b) => String(b.fechaAlerta).localeCompare(String(a.fechaAlerta)));
-
   const catCount = {};
-  TC.alertas.filter(r => (!loc || r.localidad === loc) && (!jar || r.codigo === jar)).forEach(r => {
-    catCount[r.categoria] = (catCount[r.categoria] || 0) + 1;
-  });
+  TC.alertas.filter(r => (!loc || r.localidad === loc) && (!jar || r.codigo === jar)).forEach(r => { catCount[r.categoria] = (catCount[r.categoria] || 0) + 1; });
 
-  // === Renderizar ===
+  // Guardar datos para exportar a Excel
+  TC_EXPORT = { th: thRows, cob: cobRows, alertas: alertasFiltradas, pendAlertas: pendAlertas };
+
+  // ===== Render de tablas =====
+  const thHead = TC_PERFILES.map(p => `<th>${esc(p.etq)}</th>`).join('');
+  const thBody = thRows.map(r => {
+    const nom = limpiaNom(r.jardin) || r.codigo;
+    const celdas = TC_PERFILES.map(p => `<td class="num-val">${r.per[p.clave] != null && r.per[p.clave] !== '' ? r.per[p.clave] : '\u2014'}</td>`).join('');
+    return `<tr>
+      <td><span class="loc">${esc(r.localidad)}</span></td>
+      <td><span class="jar">${esc(r.codigo)}</span><br><span style="font-size:11px;color:var(--tinta-2)">${esc(nom)}</span></td>
+      ${celdas}
+      <td style="min-width:180px;font-size:12px">${esc(r.obs) || '<span style="color:var(--tinta-2)">\u2014</span>'}</td>
+    </tr>`;
+  }).join('');
+
+  const cobHead2 = COB_PER.map(() => COB_IND.map(i => `<th class="sub">${esc(i)}</th>`).join('')).join('');
+  const cobBody = cobRows.map(r => {
+    const nom = limpiaNom(r.jardin) || r.codigo;
+    const celdas = COB_PER.map(pp => COB_IND.map(ind => {
+      const v = r.ind[ind] ? r.ind[ind][pp[0]] : '';
+      return `<td class="num-val"><span class="tc-cob-chip">${v != null && v !== '' ? v : '\u2014'}</span></td>`;
+    }).join('')).join('');
+    return `<tr>
+      <td><span class="loc">${esc(r.localidad)}</span></td>
+      <td><span class="jar">${esc(r.codigo)}</span><br><span style="font-size:11px;color:var(--tinta-2)">${esc(nom)}</span></td>
+      ${celdas}
+    </tr>`;
+  }).join('');
+
   cont.innerHTML = `
-    <!-- HERO -->
     <div class="tc-hero">
-      <div class="tc-badge">⭐ Tablero Estratégico-Táctico</div>
+      <div class="tc-badge">\u2b50 Tablero Estrat\u00e9gico-T\u00e1ctico</div>
       <h2>Control de Jardines Infantiles Nocturnos</h2>
-      <p>Información consolidada de acompañamientos. Secretaría Distrital de Integración Social.</p>
+      <p>Informaci\u00f3n consolidada de acompa\u00f1amientos. Secretar\u00eda Distrital de Integraci\u00f3n Social.</p>
     </div>
 
-    <!-- PARTE 1: Total visitas -->
     <div class="tc-kpis">
       <div class="tc-kpi"><b>${TC.totalVisitas}</b><small>visitas totales</small></div>
-      <div class="tc-kpi"><b>${TC.jardinesVisitados.length}</b><small>jardines acompañados</small></div>
-      <div class="tc-kpi"><b>${TC.localidades.length}</b><small>localidades</small></div>
+      <div class="tc-kpi"><b>${visitadosGlobal} / ${JARDINES.length}</b><small>jardines visitados</small></div>
+      <div class="tc-kpi"><b>${faltantesGlobal.length}</b><small>jardines por visitar</small></div>
     </div>
 
-    <!-- PARTE 2: Filtros -->
+    <!-- AJUSTE 2: Avance de visitas -->
+    <div class="tc-seccion">
+      <div class="tc-seccion-cab">
+        <div class="num">1</div>
+        <h3>Avance de visitas</h3>
+        <span style="font-size:12px;opacity:.8">${loc ? esc(loc) : 'Todas las localidades'}</span>
+      </div>
+      <div style="padding:14px 16px 4px">
+        <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:10px">
+          <div style="background:#E6F4EC;color:var(--verde);border-radius:10px;padding:10px 14px;font-weight:800;font-size:14px">\u2713 ${loc ? (porLoc[loc] ? porLoc[loc].vis : 0) : visitadosGlobal} visitados</div>
+          <div style="background:#FBE9EC;color:var(--rojo);border-radius:10px;padding:10px 14px;font-weight:800;font-size:14px">\u23f3 ${faltanEnVista.length} por visitar</div>
+        </div>
+        ${faltanEnVista.length ? `
+        <div class="aviso aviso-error" style="align-items:flex-start;max-height:200px;overflow:auto;display:block">
+          <b>Jardines que faltan por visitar (${faltanEnVista.length}):</b>
+          <div style="margin-top:6px;font-size:12px;line-height:1.7;font-weight:600">
+            ${faltanEnVista.map(j => `\u2022 ${esc(j.codigo)} \u00b7 ${esc(limpiaNom(j.nombre))} <span style="color:var(--tinta-2);font-weight:400">(${esc(j.localidad)})</span>`).join('<br>')}
+          </div>
+        </div>` : '<div class="aviso aviso-ok" style="margin:0">Todos los jardines de la selecci\u00f3n ya tienen al menos una visita registrada. \ud83c\udf89</div>'}
+      </div>
+      <div class="tc-loc-grid">
+        ${localidadesMostrar.map(l => {
+          const d = porLoc[l] || { total: 0, vis: 0, faltan: [] };
+          const pct = d.total ? Math.round(d.vis / d.total * 100) : 0;
+          return `<div class="tc-loc-card">
+            <div class="n">${esc(l)}</div>
+            <div class="barra"><i style="width:${pct}%"></i></div>
+            <small><b style="color:var(--azul)">${d.vis}/${d.total}</b> visitados \u00b7 ${d.faltan.length} pendientes</small>
+          </div>`;
+        }).join('')}
+      </div>
+    </div>
+
+    <!-- Filtros -->
     <div class="tc-seccion">
       <div class="tc-seccion-cab">
         <div class="num">2</div>
-        <h3>Filtros de análisis</h3>
+        <h3>Filtros de an\u00e1lisis</h3>
         <span style="font-size:12px;opacity:.8">${totalFiltroLabel}</span>
       </div>
       <div style="padding:14px 16px">
@@ -1616,155 +1710,132 @@ function pintarTablero() {
             </select>
           </label>
           <label class="campo">
-            <span>Unidad operativa (jardín)</span>
+            <span>Unidad operativa (jard\u00edn)</span>
             <select id="tc-fjar" onchange="tcCambioJar()" ${!loc ? 'disabled' : ''}>
               <option value="">Todos los jardines</option>${jarOpts}
             </select>
           </label>
         </div>
         ${loc || jar ? `<div class="aviso aviso-info" style="margin:0">
-          Mostrando: ${loc ? '<b>' + loc + '</b>' : 'todas las localidades'}
-          ${jar ? ' › <b>' + (TC.jardinesVisitados.find(j => j.codigo === jar) || {}).jardin + '</b>' : ''}
+          Mostrando: ${loc ? '<b>' + esc(loc) + '</b>' : 'todas las localidades'}${jar ? ' \u203a <b>' + esc(limpiaNom((TC.jardinesVisitados.find(j => j.codigo === jar) || {}).jardin)) + '</b>' : ''}
         </div>` : ''}
       </div>
     </div>
 
-    <!-- PARTE 3: Talento Humano -->
+    <!-- AJUSTE 3: Talento Humano -->
     <div class="tc-seccion">
       <div class="tc-seccion-cab">
         <div class="num">3</div>
         <h3>Talento Humano por perfil</h3>
-        <span style="font-size:12px;opacity:.8">${thRows.length} registros</span>
+        <span style="font-size:12px;opacity:.8">${thRows.length} jardines</span>
+        <div class="tc-cab-acciones"><button class="btn-excel" onclick="exportarTH()" ${thRows.length ? '' : 'disabled'}>\u2b07 Descargar Excel</button></div>
       </div>
       <div class="tc-tabla-wrap">
         ${thRows.length ? `
-        <table class="tc-tabla">
+        <table class="tc-tabla" style="min-width:960px">
           <thead><tr>
-            <th>Localidad</th>
-            <th>Jardín infantil</th>
-            <th>Perfil / Equipo</th>
-            <th style="text-align:right">Personas (Ago 2026)</th>
+            <th>Localidad</th><th>Jard\u00edn infantil</th>${thHead}<th>Observaciones</th>
           </tr></thead>
-          <tbody>
-            ${thRows.map(r => {
-              const nom = (r.jardin || '').replace(/JARDIN INFANTIL NOCTURNO-?/i, '').trim() || r.codigo;
-              return `<tr>
-                <td><span class="loc">${r.localidad}</span></td>
-                <td><span class="jar">${r.codigo}</span><br><span style="font-size:11px;color:var(--tinta-2)">${nom}</span></td>
-                <td><span class="perfil">${r.perfil}</span></td>
-                <td class="num-val">${r.cantidad || '—'}</td>
-              </tr>`;
-            }).join('')}
-            <tr class="tc-total-row">
-              <td colspan="3">TOTAL personas</td>
-              <td class="num-val">${thRows.reduce((s, r) => s + (r.cantidad || 0), 0)}</td>
-            </tr>
-          </tbody>
+          <tbody>${thBody}</tbody>
         </table>` : '<div class="tc-vacio">No hay datos de talento humano con los filtros seleccionados.</div>'}
       </div>
     </div>
 
-    <!-- PARTE 4: Cobertura -->
+    <!-- AJUSTE 4: Cobertura -->
     <div class="tc-seccion">
       <div class="tc-seccion-cab">
         <div class="num">4</div>
         <h3>Cobertura</h3>
-        <span style="font-size:12px;opacity:.8">${cobRows.length} registros</span>
+        <span style="font-size:12px;opacity:.8">${cobRows.length} jardines</span>
+        <div class="tc-cab-acciones"><button class="btn-excel" onclick="exportarCobertura()" ${cobRows.length ? '' : 'disabled'}>\u2b07 Descargar Excel</button></div>
       </div>
       <div class="tc-tabla-wrap">
         ${cobRows.length ? `
-        <table class="tc-tabla">
-          <thead><tr>
-            <th>Localidad</th>
-            <th>Jardín infantil</th>
-            <th>Indicador</th>
-            <th style="text-align:right">Oct 2024</th>
-            <th style="text-align:right">Feb 2026</th>
-            <th style="text-align:right">Ago 2026</th>
-          </tr></thead>
-          <tbody>
-            ${cobRows.map(r => {
-              const nom = (r.jardin || '').replace(/JARDIN INFANTIL NOCTURNO-?/i, '').trim() || r.codigo;
-              const iconInd = { 'Cupos proyectados': '🎯', 'Cupos asignados': '✅', 'Asistencia promedio': '📊' };
-              return `<tr>
-                <td><span class="loc">${r.localidad}</span></td>
-                <td><span class="jar">${r.codigo}</span><br><span style="font-size:11px;color:var(--tinta-2)">${nom}</span></td>
-                <td><span class="perfil">${iconInd[r.indicador] || ''} ${r.indicador}</span></td>
-                <td class="num-val"><span class="tc-cob-chip">${r.oct2024 || '—'}</span></td>
-                <td class="num-val"><span class="tc-cob-chip">${r.feb2026 || '—'}</span></td>
-                <td class="num-val"><span class="tc-cob-chip">${r.ago2026 || '—'}</span></td>
-              </tr>`;
-            }).join('')}
-          </tbody>
+        <table class="tc-tabla" style="min-width:840px">
+          <thead>
+            <tr>
+              <th rowspan="2">Localidad</th>
+              <th rowspan="2">Jard\u00edn infantil</th>
+              <th class="grp" colspan="3">Octubre 2025</th>
+              <th class="grp" colspan="3">Febrero 2026</th>
+              <th class="grp" colspan="3">Agosto 2026</th>
+            </tr>
+            <tr>${cobHead2}</tr>
+          </thead>
+          <tbody>${cobBody}</tbody>
         </table>` : '<div class="tc-vacio">No hay datos de cobertura con los filtros seleccionados.</div>'}
       </div>
     </div>
 
-    <!-- PARTE 5: Alertas -->
+    <!-- AJUSTE 5 + 6: Alertas -->
     <div class="tc-seccion">
       <div class="tc-seccion-cab">
         <div class="num">5</div>
         <h3>Alertas</h3>
         <span style="font-size:12px;opacity:.8">${alertasFiltradas.length} alerta${alertasFiltradas.length !== 1 ? 's' : ''}</span>
+        <div class="tc-cab-acciones"><button class="btn-excel" onclick="exportarAlertas()" ${alertasFiltradas.length ? '' : 'disabled'}>\u2b07 Descargar Excel</button></div>
       </div>
-      <!-- Resumen general de alertas por categoría -->
+
+      <!-- AJUSTE 5: pendientes de diligenciar el m\u00f3dulo -->
+      <div style="padding:12px 16px 0">
+        <p style="font-size:12px;color:var(--tinta-2);font-weight:700;margin-bottom:8px">JARDINES SIN DILIGENCIAR EL M\u00d3DULO DE ALERTAS (${pendAlertas.length})</p>
+        ${pendAlertas.length ? `
+        <div class="tc-tabla-wrap">
+          <table class="tc-tabla">
+            <thead><tr><th>Localidad</th><th>Jard\u00edn infantil</th></tr></thead>
+            <tbody>
+              ${pendAlertas.map(j => `<tr>
+                <td><span class="loc">${esc(j.localidad)}</span></td>
+                <td><span class="jar">${esc(j.codigo)}</span> <span style="font-size:11px;color:var(--tinta-2)">${esc(limpiaNom(j.jardin) || '')}</span></td>
+              </tr>`).join('')}
+            </tbody>
+          </table>
+        </div>` : '<div class="aviso aviso-ok" style="margin:0 0 4px">Todos los jardines visitados registraron el m\u00f3dulo de alertas.</div>'}
+      </div>
+
       ${Object.keys(catCount).length ? `
       <div style="padding:12px 16px 0">
         <p style="font-size:12px;color:var(--tinta-2);font-weight:700;margin-bottom:8px">RESUMEN GENERAL</p>
         <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:4px">
-          ${Object.entries(catCount).sort((a,b) => b[1]-a[1]).map(([cat, cnt]) =>
+          ${Object.entries(catCount).sort((a, b) => b[1] - a[1]).map(entry =>
             `<div style="background:var(--fondo);border-radius:10px;padding:8px 12px;font-size:12px">
-              <b style="color:var(--azul);font-size:16px">${cnt}</b><br><span style="color:var(--tinta-2)">${cat}</span>
-            </div>`
-          ).join('')}
+              <b style="color:var(--azul);font-size:16px">${entry[1]}</b><br><span style="color:var(--tinta-2)">${esc(entry[0])}</span>
+            </div>`).join('')}
         </div>
       </div>` : ''}
-      <!-- Filtros por categoría -->
+
       <div class="tc-alerta-filtros">
         <button class="tc-btn-cat ${!tcFiltroAlertaCat ? 'activo' : ''}" onclick="tcFiltrarAlerta('')">Todas</button>
-        ${TC.categorias.filter(c => {
-          // Solo mostrar categorías que tienen registros con el filtro de loc/jar actual
-          const count = TC.alertas.filter(r => (!loc || r.localidad === loc) && (!jar || r.codigo === jar) && r.categoria === c).length;
-          return count > 0;
-        }).map(c => {
+        ${TC.categorias.filter(c => TC.alertas.filter(r => (!loc || r.localidad === loc) && (!jar || r.codigo === jar) && r.categoria === c).length > 0).map(c => {
           const cnt = TC.alertas.filter(r => (!loc || r.localidad === loc) && (!jar || r.codigo === jar) && r.categoria === c).length;
-          return `<button class="tc-btn-cat ${tcFiltroAlertaCat === c ? 'activo' : ''}" onclick="tcFiltrarAlerta('${c.replace(/'/g,"\\'")}')">
-            ${c} <span style="opacity:.7">(${cnt})</span>
-          </button>`;
+          return `<button class="tc-btn-cat ${tcFiltroAlertaCat === c ? 'activo' : ''}" onclick="tcFiltrarAlerta('${c.replace(/'/g, "\\'")}')">${esc(c)} <span style="opacity:.7">(${cnt})</span></button>`;
         }).join('')}
       </div>
-      <!-- Tabla alertas -->
+
       ${alertasFiltradas.length ? `
       <div class="tc-tabla-wrap">
-        <table class="tc-tabla">
+        <table class="tc-tabla" style="min-width:780px">
           <thead><tr>
             <th>Localidad</th>
-            <th>Jardín</th>
-            <th>Consecutivo</th>
-            <th>Categoría</th>
-            <th>Concepto / Descripción</th>
-            <th>Fecha</th>
-            <th>Imagen</th>
+            <th>Jard\u00edn infantil</th>
+            <th>Categor\u00eda</th>
+            <th>Concepto</th>
+            <th>Descripci\u00f3n</th>
+            <th>Link de imagen</th>
           </tr></thead>
           <tbody>
             ${alertasFiltradas.map(r => {
-              const nom = (r.jardin || '').replace(/JARDIN INFANTIL NOCTURNO-?/i, '').trim() || r.codigo;
-              const catClass = /infraestructura|daño|riesgo/i.test(r.categoria) ? 'cat-rojo'
-                : /proceso|alimenta|servicio/i.test(r.categoria) ? 'cat-naranja' : 'cat-verde';
-              const imgHtml = r.archivoUrl
-                ? `<img src="${r.archivoUrl}" class="tc-alerta-img" alt="Alerta" onclick="abrirModalImg('${r.archivoUrl.replace(/'/g,"\\'")}','${(r.consecutivo||'').replace(/'/g,"\\'")}')">` 
-                : `<div class="tc-alerta-img-ph">Sin imagen</div>`;
+              const nom = limpiaNom(r.jardin) || r.codigo;
+              const catClass = /infraestructura|da\u00f1o|riesgo/i.test(r.categoria) ? 'cat-rojo' : /proceso|alimenta|servicio/i.test(r.categoria) ? 'cat-naranja' : 'cat-verde';
+              const concepto = r.concepto ? `<b style="color:var(--azul)">${esc(r.concepto)}</b>${r.fechaConcepto ? `<br><span style="color:var(--tinta-2);font-size:11px">Visita: ${esc(r.fechaConcepto)}</span>` : ''}` : '<span style="color:var(--tinta-2)">\u2014</span>';
+              const link = r.archivoUrl ? `<a class="tc-link" href="${esc(r.archivoUrl)}" target="_blank" rel="noopener">Abrir imagen \u2197</a>` : '<span style="color:var(--tinta-2);font-size:11px">Sin imagen</span>';
               return `<tr>
-                <td><span class="loc">${r.localidad}</span></td>
-                <td><span class="jar">${r.codigo}</span><br><span style="font-size:11px;color:var(--tinta-2)">${nom}</span></td>
-                <td><code style="font-size:11px">${r.consecutivo}</code></td>
-                <td><span class="tc-alerta-cat ${catClass}">${r.categoria}</span></td>
-                <td>
-                  ${r.concepto ? `<b style="font-size:12px;color:var(--azul)">${r.concepto}</b>${r.fechaConcepto ? ` <span style="color:var(--tinta-2);font-size:11px">(${r.fechaConcepto})</span>` : ''}<br>` : ''}
-                  <span style="font-size:12px">${r.descripcion || '—'}</span>
-                </td>
-                <td style="font-size:11px;color:var(--tinta-2);white-space:nowrap">${r.fechaAlerta || '—'}</td>
-                <td>${imgHtml}</td>
+                <td><span class="loc">${esc(r.localidad)}</span></td>
+                <td><span class="jar">${esc(r.codigo)}</span><br><span style="font-size:11px;color:var(--tinta-2)">${esc(nom)}</span></td>
+                <td><span class="tc-alerta-cat ${catClass}">${esc(r.categoria)}</span></td>
+                <td style="font-size:12px">${concepto}</td>
+                <td style="font-size:12px;min-width:200px">${esc(r.descripcion) || '\u2014'}</td>
+                <td>${link}</td>
               </tr>`;
             }).join('')}
           </tbody>
@@ -1772,6 +1843,93 @@ function pintarTablero() {
       </div>` : '<div class="tc-vacio">No hay alertas con los filtros seleccionados.</div>'}
     </div>
   `;
+}
+
+/* ---------- Exportar a Excel (Ajustes 3, 4, 6) ---------- */
+function tcLimpiaNom(s) { return String(s || '').replace(/JARDIN INFANTIL NOCTURNO-?/i, '').trim(); }
+function tcNombreJardin(codigo, jardin) { const n = tcLimpiaNom(jardin); return codigo + (n ? ' - ' + n : ''); }
+function tcSufijoArchivo() {
+  const p = [];
+  if (tcFiltroLoc) p.push(tcFiltroLoc.replace(/[^\w]+/g, '_'));
+  if (tcFiltroJar) p.push(tcFiltroJar);
+  const f = new Date().toISOString().slice(0, 10);
+  return (p.length ? '_' + p.join('_') : '') + '_' + f;
+}
+function _hojaNombre(n) { return String(n || 'Hoja').replace(/[\\/?*\[\]:]/g, ' ').slice(0, 31); }
+function descargarXLSX(nombreArchivo, hojas) {
+  try {
+    if (typeof XLSX === 'undefined') throw new Error('SheetJS no disponible');
+    const wb = XLSX.utils.book_new();
+    hojas.forEach(h => {
+      const ws = XLSX.utils.aoa_to_sheet(h.aoa);
+      if (h.merges) ws['!merges'] = h.merges;
+      if (h.cols) ws['!cols'] = h.cols;
+      XLSX.utils.book_append_sheet(wb, ws, _hojaNombre(h.nombre));
+    });
+    XLSX.writeFile(wb, nombreArchivo + '.xlsx');
+  } catch (e) {
+    // Respaldo: descarga en CSV (primera hoja) si la librer\u00eda no carg\u00f3
+    const h = hojas[0];
+    const csv = h.aoa.map(fila => fila.map(c => {
+      const s = String(c == null ? '' : c).replace(/"/g, '""');
+      return /[";\n]/.test(s) ? '"' + s + '"' : s;
+    }).join(';')).join('\r\n');
+    const blob = new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8;' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = nombreArchivo + '.csv';
+    document.body.appendChild(a); a.click();
+    setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 600);
+  }
+}
+function exportarTH() {
+  const rows = (TC_EXPORT.th || []);
+  if (!rows.length) { alert('No hay datos de talento humano para exportar.'); return; }
+  const enc = ['Localidad', 'Jard\u00edn infantil'].concat(TC_PERFILES.map(p => p.etq)).concat(['Observaciones']);
+  const aoa = [enc];
+  rows.forEach(r => {
+    const fila = [r.localidad, tcNombreJardin(r.codigo, r.jardin)];
+    TC_PERFILES.forEach(p => { const v = r.per[p.clave]; fila.push(v == null || v === '' ? '' : v); });
+    fila.push(r.obs || '');
+    aoa.push(fila);
+  });
+  const cols = enc.map((c, i) => ({ wch: i === 0 ? 24 : i === 1 ? 32 : i === enc.length - 1 ? 45 : 16 }));
+  descargarXLSX('Talento_Humano' + tcSufijoArchivo(), [{ nombre: 'Talento Humano', aoa: aoa, cols: cols }]);
+}
+function exportarCobertura() {
+  const rows = (TC_EXPORT.cob || []);
+  if (!rows.length) { alert('No hay datos de cobertura para exportar.'); return; }
+  const IND = ['Cupos proyectados', 'Cupos asignados', 'Asistencia promedio'];
+  const PER = [['oct2025', 'Octubre 2025'], ['feb2026', 'Febrero 2026'], ['ago2026', 'Agosto 2026']];
+  const h1 = ['Localidad', 'Jard\u00edn infantil'];
+  const h2 = ['', ''];
+  PER.forEach(p => { h1.push(p[1], '', ''); IND.forEach(i => h2.push(i)); });
+  const aoa = [h1, h2];
+  rows.forEach(r => {
+    const fila = [r.localidad, tcNombreJardin(r.codigo, r.jardin)];
+    PER.forEach(p => IND.forEach(ind => { const v = r.ind[ind] ? r.ind[ind][p[0]] : ''; fila.push(v == null || v === '' ? '' : v); }));
+    aoa.push(fila);
+  });
+  const merges = [
+    { s: { r: 0, c: 0 }, e: { r: 1, c: 0 } },
+    { s: { r: 0, c: 1 }, e: { r: 1, c: 1 } },
+    { s: { r: 0, c: 2 }, e: { r: 0, c: 4 } },
+    { s: { r: 0, c: 5 }, e: { r: 0, c: 7 } },
+    { s: { r: 0, c: 8 }, e: { r: 0, c: 10 } }
+  ];
+  const cols = [{ wch: 24 }, { wch: 32 }].concat(Array.from({ length: 9 }, () => ({ wch: 15 })));
+  descargarXLSX('Cobertura' + tcSufijoArchivo(), [{ nombre: 'Cobertura', aoa: aoa, merges: merges, cols: cols }]);
+}
+function exportarAlertas() {
+  const rows = (TC_EXPORT.alertas || []);
+  if (!rows.length) { alert('No hay alertas para exportar.'); return; }
+  const enc = ['Localidad', 'Jard\u00edn infantil', 'Categor\u00eda', 'Concepto', 'Descripci\u00f3n', 'Link de imagen'];
+  const aoa = [enc];
+  rows.forEach(r => {
+    aoa.push([r.localidad, tcNombreJardin(r.codigo, r.jardin), r.categoria, r.concepto || '', r.descripcion || '', r.archivoUrl || '']);
+  });
+  const cols = [{ wch: 24 }, { wch: 32 }, { wch: 26 }, { wch: 22 }, { wch: 45 }, { wch: 52 }];
+  descargarXLSX('Alertas' + tcSufijoArchivo(), [{ nombre: 'Alertas', aoa: aoa, cols: cols }]);
 }
 
 function tcCambioLoc() {
