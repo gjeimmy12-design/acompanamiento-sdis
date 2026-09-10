@@ -279,6 +279,12 @@
   .tc-tabla th.grp{text-align:center;background:var(--azul);color:#fff}
   .tc-tabla th.sub{font-size:11px}
   .tc-link{color:var(--azul-2);font-size:11px;word-break:break-all;text-decoration:underline}
+  .tc-subtot{display:flex;flex-wrap:wrap;gap:8px;padding:12px 16px 2px}
+  .tc-chip-sub{background:var(--fondo);border:1px solid var(--linea);border-radius:999px;padding:6px 12px;font-size:12px;color:var(--tinta-2);font-weight:700;line-height:1.25}
+  .tc-chip-sub b{color:var(--azul);font-weight:900}
+  .tc-chip-sub.tot{background:var(--azul);color:#fff;border-color:var(--azul)}
+  .tc-chip-sub.tot b{color:var(--amarillo)}
+  .tc-tabla tfoot td{color:var(--azul)}
 </style>
 <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
 </head>
@@ -1648,6 +1654,37 @@ function pintarTablero() {
     </tr>`;
   }).join('');
 
+  // ===== Subtotales (chips arriba) y totales (pie de tabla). Se recalculan con el filtro activo =====
+  const thT = tcTotTH(thRows);
+  const cobT = tcTotCob(cobRows);
+  const conceptoCount = tcTotConcepto(alertasFiltradas);
+  const fNum = v => (v == null ? '\u2014' : v);
+
+  const thChips = thRows.length ? `<div class="tc-subtot">
+    <span class="tc-chip-sub tot">Total personas <b>${thT.general}</b></span>
+    ${TC_PERFILES.map(p => `<span class="tc-chip-sub">${esc(p.etq)} <b>${thT.porPerfil[p.clave]}</b></span>`).join('')}
+  </div>` : '';
+  const thFoot = thRows.length ? `<tfoot><tr class="tc-total-row">
+    <td colspan="2">TOTAL \u00b7 ${thRows.length} jard${thRows.length !== 1 ? 'ines' : '\u00edn'}</td>
+    ${TC_PERFILES.map(p => `<td class="num-val">${thT.porPerfil[p.clave]}</td>`).join('')}
+    <td></td>
+  </tr></tfoot>` : '';
+
+  const cobChips = cobRows.length ? `<div class="tc-subtot">
+    ${COB_PER.map(pp => `<span class="tc-chip-sub"><b>${esc(pp[1])}</b> &nbsp; Proy: <b>${fNum(cobT.val(pp[0], 'Cupos proyectados'))}</b> \u00b7 Asig: <b>${fNum(cobT.val(pp[0], 'Cupos asignados'))}</b> \u00b7 Asist. prom: <b>${fNum(cobT.val(pp[0], 'Asistencia promedio'))}</b></span>`).join('')}
+  </div>` : '';
+  const cobFoot = cobRows.length ? `<tfoot><tr class="tc-total-row">
+    <td colspan="2">TOTAL / PROMEDIO</td>
+    ${COB_PER.map(pp => COB_IND.map(ind => `<td class="num-val">${fNum(cobT.val(pp[0], ind))}</td>`).join('')).join('')}
+  </tr></tfoot>` : '';
+
+  const alertChips = alertasFiltradas.length ? `<div class="tc-subtot">
+    <span class="tc-chip-sub tot">Total alertas <b>${alertasFiltradas.length}</b></span>
+    ${Object.entries(conceptoCount).sort((a, b) => b[1] - a[1]).map(e => `<span class="tc-chip-sub">${esc(e[0])} <b>${e[1]}</b></span>`).join('')}
+  </div>` : '';
+  const alertFoot = `<tfoot><tr class="tc-total-row"><td colspan="6">TOTAL \u00b7 ${alertasFiltradas.length} alerta${alertasFiltradas.length !== 1 ? 's' : ''}</td></tr></tfoot>`;
+  const pendFoot = pendAlertas.length ? `<tfoot><tr class="tc-total-row"><td colspan="2">TOTAL \u00b7 ${pendAlertas.length} jard${pendAlertas.length !== 1 ? 'ines' : '\u00edn'} sin diligenciar</td></tr></tfoot>` : '';
+
   cont.innerHTML = `
     <div class="tc-hero">
       <div class="tc-badge">\u2b50 Tablero Estrat\u00e9gico-T\u00e1ctico</div>
@@ -1730,6 +1767,7 @@ function pintarTablero() {
         <span style="font-size:12px;opacity:.8">${thRows.length} jardines</span>
         <div class="tc-cab-acciones"><button class="btn-excel" onclick="exportarTH()" ${thRows.length ? '' : 'disabled'}>\u2b07 Descargar Excel</button></div>
       </div>
+      ${thChips}
       <div class="tc-tabla-wrap">
         ${thRows.length ? `
         <table class="tc-tabla" style="min-width:960px">
@@ -1737,6 +1775,7 @@ function pintarTablero() {
             <th>Localidad</th><th>Jard\u00edn infantil</th>${thHead}<th>Observaciones</th>
           </tr></thead>
           <tbody>${thBody}</tbody>
+          ${thFoot}
         </table>` : '<div class="tc-vacio">No hay datos de talento humano con los filtros seleccionados.</div>'}
       </div>
     </div>
@@ -1749,6 +1788,7 @@ function pintarTablero() {
         <span style="font-size:12px;opacity:.8">${cobRows.length} jardines</span>
         <div class="tc-cab-acciones"><button class="btn-excel" onclick="exportarCobertura()" ${cobRows.length ? '' : 'disabled'}>\u2b07 Descargar Excel</button></div>
       </div>
+      ${cobChips}
       <div class="tc-tabla-wrap">
         ${cobRows.length ? `
         <table class="tc-tabla" style="min-width:840px">
@@ -1763,6 +1803,7 @@ function pintarTablero() {
             <tr>${cobHead2}</tr>
           </thead>
           <tbody>${cobBody}</tbody>
+          ${cobFoot}
         </table>` : '<div class="tc-vacio">No hay datos de cobertura con los filtros seleccionados.</div>'}
       </div>
     </div>
@@ -1789,6 +1830,7 @@ function pintarTablero() {
                 <td><span class="jar">${esc(j.codigo)}</span> <span style="font-size:11px;color:var(--tinta-2)">${esc(limpiaNom(j.jardin) || '')}</span></td>
               </tr>`).join('')}
             </tbody>
+            ${pendFoot}
           </table>
         </div>` : '<div class="aviso aviso-ok" style="margin:0 0 4px">Todos los jardines visitados registraron el m\u00f3dulo de alertas.</div>'}
       </div>
@@ -1812,6 +1854,7 @@ function pintarTablero() {
         }).join('')}
       </div>
 
+      ${alertChips}
       ${alertasFiltradas.length ? `
       <div class="tc-tabla-wrap">
         <table class="tc-tabla" style="min-width:780px">
@@ -1839,10 +1882,34 @@ function pintarTablero() {
               </tr>`;
             }).join('')}
           </tbody>
+          ${alertFoot}
         </table>
       </div>` : '<div class="tc-vacio">No hay alertas con los filtros seleccionados.</div>'}
     </div>
   `;
+}
+
+/* ---------- Totales / subtotales (se recalculan con cada filtro) ---------- */
+function tcTotTH(rows) {
+  const t = {}; TC_PERFILES.forEach(p => t[p.clave] = 0); let g = 0;
+  (rows || []).forEach(r => TC_PERFILES.forEach(p => { const v = Number(r.per[p.clave]); if (!isNaN(v)) { t[p.clave] += v; g += v; } }));
+  return { porPerfil: t, general: g };
+}
+function tcEsProm(ind) { return /promedio|asistencia/i.test(ind); }
+function tcTotCob(rows) {
+  const IND = ['Cupos proyectados', 'Cupos asignados', 'Asistencia promedio'];
+  const PERK = ['oct2025', 'feb2026', 'ago2026'];
+  const agg = {}; PERK.forEach(k => { agg[k] = {}; IND.forEach(i => agg[k][i] = { sum: 0, cnt: 0 }); });
+  (rows || []).forEach(r => PERK.forEach(k => IND.forEach(i => {
+    const v = r.ind[i] ? Number(r.ind[i][k]) : NaN;
+    if (!isNaN(v)) { agg[k][i].sum += v; agg[k][i].cnt++; }
+  })));
+  const val = (k, i) => { const a = agg[k] && agg[k][i]; if (!a || !a.cnt) return null; return tcEsProm(i) ? Math.round(a.sum / a.cnt) : a.sum; };
+  return { agg: agg, val: val, IND: IND, PERK: PERK };
+}
+function tcTotConcepto(rows) {
+  const c = {}; (rows || []).forEach(r => { const k = (r.concepto && String(r.concepto).trim()) ? r.concepto : 'Sin concepto'; c[k] = (c[k] || 0) + 1; });
+  return c;
 }
 
 /* ---------- Exportar a Excel (Ajustes 3, 4, 6) ---------- */
@@ -1893,6 +1960,11 @@ function exportarTH() {
     fila.push(r.obs || '');
     aoa.push(fila);
   });
+  const tTH = tcTotTH(rows);
+  const filaTot = ['TOTAL', rows.length + ' jardines'];
+  TC_PERFILES.forEach(p => filaTot.push(tTH.porPerfil[p.clave]));
+  filaTot.push('');
+  aoa.push(filaTot);
   const cols = enc.map((c, i) => ({ wch: i === 0 ? 24 : i === 1 ? 32 : i === enc.length - 1 ? 45 : 16 }));
   descargarXLSX('Talento_Humano' + tcSufijoArchivo(), [{ nombre: 'Talento Humano', aoa: aoa, cols: cols }]);
 }
@@ -1910,6 +1982,10 @@ function exportarCobertura() {
     PER.forEach(p => IND.forEach(ind => { const v = r.ind[ind] ? r.ind[ind][p[0]] : ''; fila.push(v == null || v === '' ? '' : v); }));
     aoa.push(fila);
   });
+  const tCob = tcTotCob(rows);
+  const filaTot = ['TOTAL / PROMEDIO', ''];
+  PER.forEach(p => IND.forEach(ind => { const v = tCob.val(p[0], ind); filaTot.push(v == null ? '' : v); }));
+  aoa.push(filaTot);
   const merges = [
     { s: { r: 0, c: 0 }, e: { r: 1, c: 0 } },
     { s: { r: 0, c: 1 }, e: { r: 1, c: 1 } },
@@ -1928,6 +2004,7 @@ function exportarAlertas() {
   rows.forEach(r => {
     aoa.push([r.localidad, tcNombreJardin(r.codigo, r.jardin), r.categoria, r.concepto || '', r.descripcion || '', r.archivoUrl || '']);
   });
+  aoa.push(['TOTAL', rows.length + ' alertas', '', '', '', '']);
   const cols = [{ wch: 24 }, { wch: 32 }, { wch: 26 }, { wch: 22 }, { wch: 45 }, { wch: 52 }];
   descargarXLSX('Alertas' + tcSufijoArchivo(), [{ nombre: 'Alertas', aoa: aoa, cols: cols }]);
 }
