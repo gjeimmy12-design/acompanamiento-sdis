@@ -207,6 +207,55 @@
   .rank:last-child{border-bottom:none}
   .rank .nc{color:var(--rojo);font-weight:800;flex:none}
 
+  /* ---------- Tablero de Control ---------- */
+  .tc-hero{background:linear-gradient(135deg,var(--azul) 60%,var(--azul-2));color:#fff;border-radius:var(--radio);padding:22px 20px 18px;margin-bottom:14px;position:relative;overflow:hidden}
+  .tc-hero::after{content:"";position:absolute;right:-30px;top:-30px;width:140px;height:140px;border-radius:50%;background:var(--amarillo);opacity:.12}
+  .tc-hero h2{font-size:19px;margin-bottom:6px}
+  .tc-hero p{font-size:13px;opacity:.85;margin:0}
+  .tc-badge{display:inline-flex;align-items:center;gap:6px;background:var(--amarillo);color:var(--azul);border-radius:999px;padding:4px 12px;font-size:12px;font-weight:800;margin-bottom:10px}
+  .tc-kpis{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:14px}
+  .tc-kpi{background:#fff;border:1px solid var(--linea);border-radius:10px;padding:14px;text-align:center}
+  .tc-kpi b{display:block;font-size:26px;color:var(--azul);font-weight:800}
+  .tc-kpi small{color:var(--tinta-2);font-size:11px}
+  .tc-filtros{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px}
+  .tc-filtros label.campo{margin-bottom:0}
+  .tc-seccion{background:#fff;border:1px solid var(--linea);border-radius:var(--radio);margin-bottom:14px;overflow:hidden}
+  .tc-seccion-cab{background:var(--azul);color:#fff;padding:12px 16px;display:flex;align-items:center;gap:10px}
+  .tc-seccion-cab h3{font-size:15px;margin:0;flex:1}
+  .tc-seccion-cab .num{background:var(--amarillo);color:var(--azul);width:24px;height:24px;border-radius:50%;display:grid;place-items:center;font-size:13px;font-weight:800;flex:none}
+  .tc-tabla-wrap{overflow-x:auto;padding:0 0 4px}
+  .tc-tabla{width:100%;border-collapse:collapse;font-size:13px;min-width:420px}
+  .tc-tabla th{background:var(--fondo);color:var(--tinta-2);font-size:11px;font-weight:700;padding:8px 10px;text-align:left;border-bottom:2px solid var(--linea);white-space:nowrap}
+  .tc-tabla td{padding:9px 10px;border-bottom:1px solid var(--linea);vertical-align:middle}
+  .tc-tabla tr:last-child td{border-bottom:none}
+  .tc-tabla tr:hover td{background:#F6F9FF}
+  .tc-tabla .num-val{text-align:right;font-weight:700;color:var(--azul)}
+  .tc-tabla .loc{color:var(--tinta-2);font-size:11px}
+  .tc-tabla .jar{font-weight:600}
+  .tc-tabla .perfil{color:var(--azul-2);font-weight:600}
+  .tc-vacio{padding:18px 16px;color:var(--tinta-2);font-size:13px;text-align:center}
+  .tc-alerta-filtros{display:flex;flex-wrap:wrap;gap:6px;padding:12px 16px 4px}
+  .tc-btn-cat{border:1.5px solid var(--linea);background:#fff;border-radius:999px;padding:5px 12px;font-size:12px;font-weight:700;color:var(--tinta-2);cursor:pointer}
+  .tc-btn-cat.activo{background:var(--azul);color:#fff;border-color:var(--azul)}
+  .tc-alerta-card{border-bottom:1px solid var(--linea);padding:12px 16px;display:grid;grid-template-columns:1fr auto;gap:8px;align-items:start}
+  .tc-alerta-card:last-child{border-bottom:none}
+  .tc-alerta-img{width:72px;height:72px;object-fit:cover;border-radius:8px;cursor:pointer;background:var(--fondo);border:1px solid var(--linea)}
+  .tc-alerta-img-ph{width:72px;height:72px;border-radius:8px;background:var(--fondo);display:grid;place-items:center;font-size:10px;color:var(--tinta-2);text-align:center;border:1px solid var(--linea);flex:none}
+  .tc-alerta-info{flex:1;min-width:0}
+  .tc-alerta-cat{display:inline-block;background:var(--fondo);border-radius:999px;padding:2px 8px;font-size:11px;font-weight:700;color:var(--azul-2);margin-bottom:4px}
+  .tc-alerta-cat.cat-rojo{background:#FBE9EC;color:var(--rojo)}
+  .tc-alerta-cat.cat-naranja{background:#FFF3E0;color:#E65100}
+  .tc-alerta-cat.cat-verde{background:#E6F4EC;color:var(--verde)}
+  .tc-alerta-desc{font-size:13px;margin-bottom:2px}
+  .tc-alerta-meta{font-size:11px;color:var(--tinta-2)}
+  .tc-modal-img{position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:200;display:grid;place-items:center;padding:20px}
+  .tc-modal-img img{max-width:100%;max-height:90vh;border-radius:10px;object-fit:contain}
+  .tc-modal-img button{position:absolute;top:16px;right:16px;background:#fff;border:none;border-radius:50%;width:36px;height:36px;font-size:20px;cursor:pointer;font-weight:800;color:var(--tinta)}
+  .tc-cargando{padding:30px;text-align:center;color:var(--tinta-2)}
+  .tc-accion-barra{display:flex;gap:8px;margin-bottom:14px}
+  .tc-cob-chip{display:inline-block;font-size:12px;padding:2px 8px;border-radius:6px;background:var(--fondo);font-weight:700}
+  .tc-total-row td{background:#EEF3FB;font-weight:800;border-top:2px solid var(--azul)}
+
   /* ---------- Barra inferior ---------- */
   .pie{position:fixed;left:0;right:0;bottom:0;background:#fff;border-top:1px solid var(--linea);padding:10px 16px calc(10px + env(safe-area-inset-bottom));display:flex;gap:10px;z-index:20}
   .pie .btn{flex:1}
@@ -276,6 +325,7 @@
     </div>
     <button id="btn-iniciar" class="btn btn-amarillo" type="button" disabled>Iniciar acompañamiento</button>
     <button id="btn-ver-dash" class="btn btn-borde" type="button" style="margin-top:10px">Ver seguimiento de acompañamientos</button>
+    <button id="btn-ver-tablero" class="btn btn-borde oculto" type="button" style="margin-top:10px;border-color:var(--amarillo);color:var(--azul);background:linear-gradient(90deg,#fffbe6,#fff)">📊 Tablero de Control Estratégico-Táctico</button>
   </section>
 
   <!-- ============ PANTALLA DASHBOARD ============ -->
@@ -283,6 +333,27 @@
     <div id="dash-cuerpo"><p class="ayuda">Cargando seguimiento…</p></div>
     <button id="btn-dash-actualizar" class="btn btn-borde" type="button">Actualizar</button>
     <button id="btn-dash-volver" class="btn btn-primario" type="button" style="margin-top:10px">Volver</button>
+  </section>
+
+  <!-- ============ PANTALLA TABLERO DE CONTROL ============ -->
+  <section id="p-tablero" class="pantalla">
+    <div id="tc-cuerpo">
+      <div class="tc-cargando">
+        <div class="cargando" style="position:relative;inset:auto;background:none;color:var(--tinta-2);padding:0;display:block">
+          <div class="aro" style="border-top-color:var(--azul);border-color:var(--linea);border-top-color:var(--azul);margin:0 auto 10px"></div>
+          Cargando tablero…
+        </div>
+      </div>
+    </div>
+    <!-- Modal imagen alerta -->
+    <div id="tc-modal" class="tc-modal-img oculto">
+      <button onclick="cerrarModalImg()">✕</button>
+      <img id="tc-modal-img" src="" alt="Imagen de alerta">
+    </div>
+    <div style="margin-top:10px;display:flex;flex-direction:column;gap:10px">
+      <button id="btn-tc-actualizar" class="btn btn-borde" type="button">Actualizar tablero</button>
+      <button id="btn-tc-volver" class="btn btn-primario" type="button">Volver al inicio</button>
+    </div>
   </section>
 
   <!-- ============ PANTALLA 3: ACOMPAÑAMIENTO ============ -->
@@ -630,6 +701,9 @@ function salir() {
 /* ---------- Selección ---------- */
 function irASeleccion() {
   $("cab-titulo").textContent = `${sesion.nombre} · ${sesion.rol}`;
+  // Mostrar botón de tablero solo para rol Estratégico-Táctico
+  const btnTC = $("btn-ver-tablero");
+  if (btnTC) btnTC.classList.toggle("oculto", !esRolTablero());
   const bor = store.get(claveBorrador());
   if (bor && bor.codigo) {
     $("borrador-jardin").textContent = `${bor.codigo} · ${bor.jardin}`;
@@ -1417,6 +1491,319 @@ function fmtFecha(f) {
   return s.length >= 16 ? s.slice(0, 16).replace("T", " ") : s;
 }
 
+/* ================================================================
+   TABLERO DE CONTROL ESTRATÉGICO-TÁCTICO
+   ================================================================ */
+let TC = null; // datos del tablero
+let tcFiltroLoc = "";
+let tcFiltroJar = "";
+let tcFiltroAlertaCat = ""; // categoría de alerta seleccionada
+
+const ROL_TABLERO = "Estratégico - Táctico";
+
+function esRolTablero() {
+  return sesion && sesion.rol && sesion.rol.trim() === ROL_TABLERO;
+}
+
+async function abrirTablero() {
+  mostrar("p-tablero");
+  tcFiltroLoc = ""; tcFiltroJar = ""; tcFiltroAlertaCat = "";
+  await cargarTablero();
+}
+
+async function cargarTablero() {
+  const cont = $("tc-cuerpo");
+  cont.innerHTML = `<div class="tc-cargando"><div class="aro" style="width:38px;height:38px;border:4px solid var(--linea);border-top-color:var(--azul);border-radius:50%;animation:gira 1s linear infinite;margin:0 auto 10px"></div>Cargando tablero de control…</div>`;
+  if (!API_URL) { cont.innerHTML = '<div class="aviso aviso-info">El tablero requiere el backend configurado.</div>'; return; }
+  if (!esRolTablero()) { cont.innerHTML = '<div class="aviso aviso-error">Acceso restringido. Solo el perfil <b>' + ROL_TABLERO + '</b> puede ver este tablero.</div>'; return; }
+  try {
+    const res = await api({ action: "tablero" });
+    if (!res.ok) throw new Error(res.error || "No se pudo cargar el tablero.");
+    TC = res;
+    pintarTablero();
+  } catch (e) {
+    cont.innerHTML = '<div class="aviso aviso-error">' + e.message + '</div>';
+  }
+}
+
+function pintarTablero() {
+  if (!TC) return;
+  const cont = $("tc-cuerpo");
+  const loc = tcFiltroLoc;
+  const jar = tcFiltroJar;
+
+  // Calcular total visitas (filtradas si aplica)
+  let visitasMostradas = TC.totalVisitas;
+  // Si hay filtro, contar cuantas visitas corresponden
+  // (el backend no devuelve lista filtrada, pero si hay filtro de jardín podemos contarlo a partir de jardinesVisitados)
+  let jardinesFiltrados = TC.jardinesVisitados.filter(j => (!loc || j.localidad === loc) && (!jar || j.codigo === jar));
+
+  // 1. Listas para filtros
+  const locOpts = TC.localidades.map(l => `<option value="${l}" ${l === loc ? 'selected' : ''}>${l}</option>`).join('');
+  const jarFiltrados = TC.jardinesVisitados.filter(j => !loc || j.localidad === loc);
+  const jarOpts = jarFiltrados.map(j => {
+    const nom = (j.jardin || j.codigo).replace(/JARDIN INFANTIL NOCTURNO-?/i, '').trim();
+    return `<option value="${j.codigo}" ${j.codigo === jar ? 'selected' : ''}>${j.codigo} · ${nom}</option>`;
+  }).join('');
+
+  // Contar visitas del filtro actual usando el consolidado de jardines
+  const codsEnFiltro = new Set(jardinesFiltrados.map(j => j.codigo));
+  // totalVisitas global siempre viene del backend; las filtradas las aproximamos
+  const totalFiltroLabel = loc || jar
+    ? `(${jardinesFiltrados.length} jardín${jardinesFiltrados.length !== 1 ? 'es' : ''} en selección)`
+    : `(${TC.jardinesVisitados.length} jardines visitados)`;
+
+  // 2. Talento Humano – unir TH base + transversal, filtrar
+  const thBase = TC.talentoHumano.filter(r => (!loc || r.localidad === loc) && (!jar || r.codigo === jar));
+  const thTr = TC.transversal.filter(r => (!loc || r.localidad === loc) && (!jar || r.codigo === jar));
+  // Consolidar por jardín + perfil/equipo
+  const thMap = {}; // clave: localidad||codigo||jardin||perfil -> cantidad
+  thBase.forEach(r => {
+    const k = `${r.localidad}||${r.codigo}||${r.jardin}||${r.perfil}`;
+    if (!thMap[k]) thMap[k] = { localidad: r.localidad, codigo: r.codigo, jardin: r.jardin, perfil: r.perfil, cantidad: 0 };
+    thMap[k].cantidad += r.cantidad;
+  });
+  thTr.forEach(r => {
+    const k = `${r.localidad}||${r.codigo}||${r.jardin}||${r.equipo}`;
+    if (!thMap[k]) thMap[k] = { localidad: r.localidad, codigo: r.codigo, jardin: r.jardin, perfil: r.equipo, cantidad: 0 };
+    thMap[k].cantidad += r.numPersonas;
+  });
+  const thRows = Object.values(thMap).sort((a, b) => a.codigo.localeCompare(b.codigo) || a.perfil.localeCompare(b.perfil));
+
+  // 3. Cobertura
+  const cobRows = TC.cobertura.filter(r => (!loc || r.localidad === loc) && (!jar || r.codigo === jar))
+    .sort((a, b) => a.codigo.localeCompare(b.codigo) || a.indicador.localeCompare(b.indicador));
+
+  // 4. Alertas
+  const alertasFiltradas = TC.alertas.filter(r =>
+    (!loc || r.localidad === loc) && (!jar || r.codigo === jar) && (!tcFiltroAlertaCat || r.categoria === tcFiltroAlertaCat)
+  ).sort((a, b) => String(b.fechaAlerta).localeCompare(String(a.fechaAlerta)));
+
+  const catCount = {};
+  TC.alertas.filter(r => (!loc || r.localidad === loc) && (!jar || r.codigo === jar)).forEach(r => {
+    catCount[r.categoria] = (catCount[r.categoria] || 0) + 1;
+  });
+
+  // === Renderizar ===
+  cont.innerHTML = `
+    <!-- HERO -->
+    <div class="tc-hero">
+      <div class="tc-badge">⭐ Tablero Estratégico-Táctico</div>
+      <h2>Control de Jardines Infantiles Nocturnos</h2>
+      <p>Información consolidada de acompañamientos. Secretaría Distrital de Integración Social.</p>
+    </div>
+
+    <!-- PARTE 1: Total visitas -->
+    <div class="tc-kpis">
+      <div class="tc-kpi"><b>${TC.totalVisitas}</b><small>visitas totales</small></div>
+      <div class="tc-kpi"><b>${TC.jardinesVisitados.length}</b><small>jardines acompañados</small></div>
+      <div class="tc-kpi"><b>${TC.localidades.length}</b><small>localidades</small></div>
+    </div>
+
+    <!-- PARTE 2: Filtros -->
+    <div class="tc-seccion">
+      <div class="tc-seccion-cab">
+        <div class="num">2</div>
+        <h3>Filtros de análisis</h3>
+        <span style="font-size:12px;opacity:.8">${totalFiltroLabel}</span>
+      </div>
+      <div style="padding:14px 16px">
+        <div class="tc-filtros">
+          <label class="campo">
+            <span>Localidad</span>
+            <select id="tc-floc" onchange="tcCambioLoc()">
+              <option value="">Todas las localidades</option>${locOpts}
+            </select>
+          </label>
+          <label class="campo">
+            <span>Unidad operativa (jardín)</span>
+            <select id="tc-fjar" onchange="tcCambioJar()" ${!loc ? 'disabled' : ''}>
+              <option value="">Todos los jardines</option>${jarOpts}
+            </select>
+          </label>
+        </div>
+        ${loc || jar ? `<div class="aviso aviso-info" style="margin:0">
+          Mostrando: ${loc ? '<b>' + loc + '</b>' : 'todas las localidades'}
+          ${jar ? ' › <b>' + (TC.jardinesVisitados.find(j => j.codigo === jar) || {}).jardin + '</b>' : ''}
+        </div>` : ''}
+      </div>
+    </div>
+
+    <!-- PARTE 3: Talento Humano -->
+    <div class="tc-seccion">
+      <div class="tc-seccion-cab">
+        <div class="num">3</div>
+        <h3>Talento Humano por perfil</h3>
+        <span style="font-size:12px;opacity:.8">${thRows.length} registros</span>
+      </div>
+      <div class="tc-tabla-wrap">
+        ${thRows.length ? `
+        <table class="tc-tabla">
+          <thead><tr>
+            <th>Localidad</th>
+            <th>Jardín infantil</th>
+            <th>Perfil / Equipo</th>
+            <th style="text-align:right">Personas (Ago 2026)</th>
+          </tr></thead>
+          <tbody>
+            ${thRows.map(r => {
+              const nom = (r.jardin || '').replace(/JARDIN INFANTIL NOCTURNO-?/i, '').trim() || r.codigo;
+              return `<tr>
+                <td><span class="loc">${r.localidad}</span></td>
+                <td><span class="jar">${r.codigo}</span><br><span style="font-size:11px;color:var(--tinta-2)">${nom}</span></td>
+                <td><span class="perfil">${r.perfil}</span></td>
+                <td class="num-val">${r.cantidad || '—'}</td>
+              </tr>`;
+            }).join('')}
+            <tr class="tc-total-row">
+              <td colspan="3">TOTAL personas</td>
+              <td class="num-val">${thRows.reduce((s, r) => s + (r.cantidad || 0), 0)}</td>
+            </tr>
+          </tbody>
+        </table>` : '<div class="tc-vacio">No hay datos de talento humano con los filtros seleccionados.</div>'}
+      </div>
+    </div>
+
+    <!-- PARTE 4: Cobertura -->
+    <div class="tc-seccion">
+      <div class="tc-seccion-cab">
+        <div class="num">4</div>
+        <h3>Cobertura</h3>
+        <span style="font-size:12px;opacity:.8">${cobRows.length} registros</span>
+      </div>
+      <div class="tc-tabla-wrap">
+        ${cobRows.length ? `
+        <table class="tc-tabla">
+          <thead><tr>
+            <th>Localidad</th>
+            <th>Jardín infantil</th>
+            <th>Indicador</th>
+            <th style="text-align:right">Oct 2024</th>
+            <th style="text-align:right">Feb 2026</th>
+            <th style="text-align:right">Ago 2026</th>
+          </tr></thead>
+          <tbody>
+            ${cobRows.map(r => {
+              const nom = (r.jardin || '').replace(/JARDIN INFANTIL NOCTURNO-?/i, '').trim() || r.codigo;
+              const iconInd = { 'Cupos proyectados': '🎯', 'Cupos asignados': '✅', 'Asistencia promedio': '📊' };
+              return `<tr>
+                <td><span class="loc">${r.localidad}</span></td>
+                <td><span class="jar">${r.codigo}</span><br><span style="font-size:11px;color:var(--tinta-2)">${nom}</span></td>
+                <td><span class="perfil">${iconInd[r.indicador] || ''} ${r.indicador}</span></td>
+                <td class="num-val"><span class="tc-cob-chip">${r.oct2024 || '—'}</span></td>
+                <td class="num-val"><span class="tc-cob-chip">${r.feb2026 || '—'}</span></td>
+                <td class="num-val"><span class="tc-cob-chip">${r.ago2026 || '—'}</span></td>
+              </tr>`;
+            }).join('')}
+          </tbody>
+        </table>` : '<div class="tc-vacio">No hay datos de cobertura con los filtros seleccionados.</div>'}
+      </div>
+    </div>
+
+    <!-- PARTE 5: Alertas -->
+    <div class="tc-seccion">
+      <div class="tc-seccion-cab">
+        <div class="num">5</div>
+        <h3>Alertas</h3>
+        <span style="font-size:12px;opacity:.8">${alertasFiltradas.length} alerta${alertasFiltradas.length !== 1 ? 's' : ''}</span>
+      </div>
+      <!-- Resumen general de alertas por categoría -->
+      ${Object.keys(catCount).length ? `
+      <div style="padding:12px 16px 0">
+        <p style="font-size:12px;color:var(--tinta-2);font-weight:700;margin-bottom:8px">RESUMEN GENERAL</p>
+        <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:4px">
+          ${Object.entries(catCount).sort((a,b) => b[1]-a[1]).map(([cat, cnt]) =>
+            `<div style="background:var(--fondo);border-radius:10px;padding:8px 12px;font-size:12px">
+              <b style="color:var(--azul);font-size:16px">${cnt}</b><br><span style="color:var(--tinta-2)">${cat}</span>
+            </div>`
+          ).join('')}
+        </div>
+      </div>` : ''}
+      <!-- Filtros por categoría -->
+      <div class="tc-alerta-filtros">
+        <button class="tc-btn-cat ${!tcFiltroAlertaCat ? 'activo' : ''}" onclick="tcFiltrarAlerta('')">Todas</button>
+        ${TC.categorias.filter(c => {
+          // Solo mostrar categorías que tienen registros con el filtro de loc/jar actual
+          const count = TC.alertas.filter(r => (!loc || r.localidad === loc) && (!jar || r.codigo === jar) && r.categoria === c).length;
+          return count > 0;
+        }).map(c => {
+          const cnt = TC.alertas.filter(r => (!loc || r.localidad === loc) && (!jar || r.codigo === jar) && r.categoria === c).length;
+          return `<button class="tc-btn-cat ${tcFiltroAlertaCat === c ? 'activo' : ''}" onclick="tcFiltrarAlerta('${c.replace(/'/g,"\\'")}')">
+            ${c} <span style="opacity:.7">(${cnt})</span>
+          </button>`;
+        }).join('')}
+      </div>
+      <!-- Tabla alertas -->
+      ${alertasFiltradas.length ? `
+      <div class="tc-tabla-wrap">
+        <table class="tc-tabla">
+          <thead><tr>
+            <th>Localidad</th>
+            <th>Jardín</th>
+            <th>Consecutivo</th>
+            <th>Categoría</th>
+            <th>Concepto / Descripción</th>
+            <th>Fecha</th>
+            <th>Imagen</th>
+          </tr></thead>
+          <tbody>
+            ${alertasFiltradas.map(r => {
+              const nom = (r.jardin || '').replace(/JARDIN INFANTIL NOCTURNO-?/i, '').trim() || r.codigo;
+              const catClass = /infraestructura|daño|riesgo/i.test(r.categoria) ? 'cat-rojo'
+                : /proceso|alimenta|servicio/i.test(r.categoria) ? 'cat-naranja' : 'cat-verde';
+              const imgHtml = r.archivoUrl
+                ? `<img src="${r.archivoUrl}" class="tc-alerta-img" alt="Alerta" onclick="abrirModalImg('${r.archivoUrl.replace(/'/g,"\\'")}','${(r.consecutivo||'').replace(/'/g,"\\'")}')">` 
+                : `<div class="tc-alerta-img-ph">Sin imagen</div>`;
+              return `<tr>
+                <td><span class="loc">${r.localidad}</span></td>
+                <td><span class="jar">${r.codigo}</span><br><span style="font-size:11px;color:var(--tinta-2)">${nom}</span></td>
+                <td><code style="font-size:11px">${r.consecutivo}</code></td>
+                <td><span class="tc-alerta-cat ${catClass}">${r.categoria}</span></td>
+                <td>
+                  ${r.concepto ? `<b style="font-size:12px;color:var(--azul)">${r.concepto}</b>${r.fechaConcepto ? ` <span style="color:var(--tinta-2);font-size:11px">(${r.fechaConcepto})</span>` : ''}<br>` : ''}
+                  <span style="font-size:12px">${r.descripcion || '—'}</span>
+                </td>
+                <td style="font-size:11px;color:var(--tinta-2);white-space:nowrap">${r.fechaAlerta || '—'}</td>
+                <td>${imgHtml}</td>
+              </tr>`;
+            }).join('')}
+          </tbody>
+        </table>
+      </div>` : '<div class="tc-vacio">No hay alertas con los filtros seleccionados.</div>'}
+    </div>
+  `;
+}
+
+function tcCambioLoc() {
+  tcFiltroLoc = $("tc-floc").value;
+  tcFiltroJar = "";
+  tcFiltroAlertaCat = "";
+  pintarTablero();
+}
+
+function tcCambioJar() {
+  const s = $("tc-fjar");
+  if (s) tcFiltroJar = s.value;
+  tcFiltroAlertaCat = "";
+  pintarTablero();
+}
+
+function tcFiltrarAlerta(cat) {
+  tcFiltroAlertaCat = cat;
+  pintarTablero();
+}
+
+function abrirModalImg(url, titulo) {
+  $("tc-modal-img").src = url;
+  $("tc-modal").classList.remove("oculto");
+}
+
+function cerrarModalImg() {
+  $("tc-modal").classList.add("oculto");
+  $("tc-modal-img").src = "";
+}
+/* ================================================================ */
+
 /* ---------- Eventos ---------- */
 document.addEventListener("DOMContentLoaded", () => {
   poblarLocalidades();
@@ -1437,6 +1824,9 @@ document.addEventListener("DOMContentLoaded", () => {
   $("btn-ver-dash").onclick = abrirDashboard;
   $("btn-dash-actualizar").onclick = abrirDashboard;
   $("btn-dash-volver").onclick = irASeleccion;
+  $("btn-ver-tablero").onclick = abrirTablero;
+  $("btn-tc-actualizar").onclick = cargarTablero;
+  $("btn-tc-volver").onclick = irASeleccion;
   $("btn-ant").onclick = () => irModulo(Math.max(1, modActual - 1));
   $("btn-sig").onclick = () => irModulo(Math.min(MODULOS.length, modActual + 1));
   $("in-observaciones").addEventListener("input", e => { if (aud) { aud.observaciones = e.target.value; guardarBorrador(); } });
