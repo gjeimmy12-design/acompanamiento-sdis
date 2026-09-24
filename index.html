@@ -285,6 +285,27 @@
   .tc-chip-sub.tot{background:var(--azul);color:#fff;border-color:var(--azul)}
   .tc-chip-sub.tot b{color:var(--amarillo)}
   .tc-tabla tfoot td{color:var(--azul)}
+
+/* ===== Análisis del Manual ===== */
+.mnl-kpis{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin:10px 0}
+@media(min-width:560px){.mnl-kpis{grid-template-columns:repeat(4,1fr)}}
+.mnl-kpi{background:#fff;border:1px solid var(--linea);border-radius:12px;padding:12px;text-align:center}
+.mnl-kpi b{display:block;font-size:22px;color:var(--azul);line-height:1}
+.mnl-kpi small{color:var(--tinta-2);font-size:11px;display:block;margin-top:4px}
+.mnl-filtros{display:flex;gap:8px;flex-wrap:wrap;margin:10px 0}
+.mnl-filtros select{padding:9px 10px;border:1px solid var(--linea);border-radius:10px;font-size:13px;flex:1;min-width:130px;background:#fff}
+.mnl-comp{background:#fff;border:1px solid var(--linea);border-radius:12px;padding:12px;margin-bottom:8px}
+.mnl-comp .h{display:flex;justify-content:space-between;align-items:center;gap:8px;font-weight:700}
+.mnl-barra{height:8px;border-radius:6px;background:var(--linea);overflow:hidden;margin-top:8px}
+.mnl-barra i{display:block;height:100%;background:var(--azul)}
+.mnl-tab{width:100%;border-collapse:collapse;font-size:12px;margin-top:8px;background:#fff}
+.mnl-tab th,.mnl-tab td{border:1px solid var(--linea);padding:6px 5px;text-align:center}
+.mnl-tab th{background:#f5f7fa;font-size:11px}
+.mnl-sec{margin-top:20px;padding-top:12px;border-top:2px solid var(--linea)}
+.mnl-sec h3{margin:0 0 4px}
+.mnl-q{background:#fff;border:1px solid var(--linea);border-left:4px solid var(--azul);border-radius:8px;padding:10px;margin-bottom:6px}
+.mnl-q .obs{color:var(--tinta-2);font-size:12px;margin-top:6px;font-style:italic}
+.mnl-badge{display:inline-block;padding:3px 9px;border-radius:20px;font-size:11px;font-weight:700;white-space:nowrap}
 </style>
 <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
 </head>
@@ -373,7 +394,17 @@
     </div>
     <div style="margin-top:10px;display:flex;flex-direction:column;gap:10px">
       <button id="btn-tc-actualizar" class="btn btn-borde" type="button">Actualizar tablero</button>
+      <button id="btn-tc-manual" class="btn btn-borde" type="button" style="border-color:var(--azul);color:var(--azul)">📘 Análisis del Manual</button>
       <button id="btn-tc-volver" class="btn btn-primario" type="button">Volver al inicio</button>
+    </div>
+  </section>
+
+  <!-- ============ PANTALLA: ANÁLISIS DEL MANUAL ============ -->
+  <section id="p-manual" class="pantalla">
+    <div id="mnl-cuerpo"><div class="tc-cargando">Cargando análisis del Manual…</div></div>
+    <div style="margin-top:10px;display:flex;flex-direction:column;gap:10px">
+      <button id="btn-mnl-actualizar" class="btn btn-borde" type="button">Actualizar</button>
+      <button id="btn-mnl-volver" class="btn btn-primario" type="button">Volver al tablero</button>
     </div>
   </section>
 
@@ -2040,6 +2071,191 @@ function cerrarModalImg() {
 /* ================================================================ */
 
 /* ---------- Eventos ---------- */
+/* ===================== Análisis del Manual ===================== */
+let MNL = null;
+let mnlFiltroLoc = "", mnlFiltroJar = "", mnlFiltroComp = "", mnlFiltroJar3 = "";
+
+function mnlLocDe(codigo){ const j = JARDINES.find(x => x.codigo === String(codigo)); return j ? j.localidad : ""; }
+function mnlNombre(codigo, fallback){ const j = JARDINES.find(x => x.codigo === String(codigo)); const nom = (j && j.jardin) || fallback || codigo; return String(nom).replace(/JARDIN INFANTIL NOCTURNO-?/i, "").trim(); }
+function mnlProm(regs){ const v = regs.map(r => BANDA_VAL[r.estado]).filter(x => typeof x === "number"); if(!v.length) return null; return Math.round(v.reduce((a,b)=>a+b,0)/v.length); }
+
+async function abrirManual(){
+  mostrar("p-manual");
+  mnlFiltroLoc = ""; mnlFiltroJar = ""; mnlFiltroComp = ""; mnlFiltroJar3 = "";
+  await cargarManualAnalisis();
+}
+async function cargarManualAnalisis(){
+  const cont = $("mnl-cuerpo");
+  cont.innerHTML = '<div class="tc-cargando"><div class="aro" style="width:38px;height:38px;border:4px solid var(--linea);border-top-color:var(--azul);border-radius:50%;animation:gira 1s linear infinite;margin:0 auto 10px"></div>Cargando análisis del Manual…</div>';
+  if (!API_URL) { cont.innerHTML = '<div class="aviso aviso-info">Este análisis requiere el backend configurado.</div>'; return; }
+  if (!esRolTablero()) { cont.innerHTML = '<div class="aviso aviso-error">Acceso restringido.</div>'; return; }
+  try {
+    const res = await api({ action: "analisisManual" });
+    if (!res.ok) throw new Error(res.error || "No se pudo cargar el análisis.");
+    MNL = res; pintarManual();
+  } catch (e) { cont.innerHTML = '<div class="aviso aviso-error">' + e.message + '</div>'; }
+}
+
+function pintarManual(){
+  if (!MNL) return;
+  const cont = $("mnl-cuerpo");
+  const esc = s => String(s == null ? "" : s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+  const comps = INSTRUMENTO.componentes.map(c => c.n);
+
+  // Registros con localidad resuelta; filtros loc/jar aplican a TODO el análisis
+  let regs = MNL.registros.map(r => ({ ...r, localidad: r.localidad || mnlLocDe(r.codigo) }));
+  if (mnlFiltroLoc) regs = regs.filter(r => r.localidad === mnlFiltroLoc);
+  if (mnlFiltroJar) regs = regs.filter(r => String(r.codigo) === mnlFiltroJar);
+
+  // Universo de jardines según filtros (para "faltan por cargar")
+  let jardUniv = JARDINES.slice();
+  if (mnlFiltroLoc) jardUniv = jardUniv.filter(j => j.localidad === mnlFiltroLoc);
+  if (mnlFiltroJar) jardUniv = jardUniv.filter(j => j.codigo === mnlFiltroJar);
+  const totJard = jardUniv.length;
+
+  const locOpts = LOCALIDADES.slice().sort().map(l => `<option value="${esc(l)}" ${l===mnlFiltroLoc?'selected':''}>${esc(l)}</option>`).join("");
+  const jardList = JARDINES.filter(j => !mnlFiltroLoc || j.localidad === mnlFiltroLoc);
+  const jarOpts = jardList.map(j => `<option value="${j.codigo}" ${j.codigo===mnlFiltroJar?'selected':''}>${j.codigo} · ${esc(mnlNombre(j.codigo, j.jardin))}</option>`).join("");
+
+  let html = '<h2 style="margin:4px 0">\U0001F4D8 Análisis del Manual</h2>';
+  html += `<div class="mnl-filtros">
+    <select id="mnl-loc"><option value="">Todas las localidades</option>${locOpts}</select>
+    <select id="mnl-jar"><option value="">Todos los jardines</option>${jarOpts}</select>
+  </div>`;
+
+  // -------- PARTE 1: resumen general --------
+  const jcTot = new Set(regs.map(r => String(r.codigo)));
+  const promTot = mnlProm(regs);
+  html += `<div class="mnl-kpis">
+    <div class="mnl-kpi"><b>${jcTot.size}/${totJard}</b><small>jardines con Manual</small></div>
+    <div class="mnl-kpi"><b>${regs.length}</b><small>preguntas evaluadas</small></div>
+    <div class="mnl-kpi"><b>${promTot!==null?promTot+'%':'—'}</b><small>avance promedio</small></div>
+    <div class="mnl-kpi"><b>${Math.max(0, totJard - jcTot.size)}</b><small>jardines sin cargar</small></div>
+  </div>`;
+  html += '<p class="ayuda">Por submódulo: jardines que han cargado información del Manual, calificación promedio y cuántos faltan.</p>';
+  comps.forEach(cn => {
+    const rc = regs.filter(r => r.componente === cn);
+    const jc = new Set(rc.map(r => String(r.codigo)));
+    const prom = mnlProm(rc);
+    html += `<div class="mnl-comp">
+      <div class="h"><span>${esc(cn)}</span><span style="color:var(--azul)">${prom!==null?prom+'%':'—'}</span></div>
+      <div style="font-size:12px;color:var(--tinta-2);margin-top:3px">${jc.size} de ${totJard} jardines cargados · faltan ${Math.max(0,totJard-jc.size)} · ${rc.length} preguntas</div>
+      <div class="mnl-barra"><i style="width:${prom||0}%"></i></div>
+    </div>`;
+  });
+
+  // -------- PARTE 2: por submódulo (rangos por tabla) --------
+  html += '<div class="mnl-sec"><h3>Segundo análisis · por submódulo</h3>';
+  const compOpts = comps.map(c => `<option value="${esc(c)}" ${c===mnlFiltroComp?'selected':''}>${esc(c)}</option>`).join("");
+  html += `<div class="mnl-filtros"><select id="mnl-comp"><option value="">Selecciona un submódulo…</option>${compOpts}</select></div>`;
+
+  if (mnlFiltroComp) {
+    const comp = INSTRUMENTO.componentes.find(c => c.n === mnlFiltroComp);
+    const rc = regs.filter(r => r.componente === mnlFiltroComp);
+    const jc = new Set(rc.map(r => String(r.codigo)));
+    html += `<div class="mnl-kpis">
+      <div class="mnl-kpi"><b>${jc.size}/${totJard}</b><small>jardines</small></div>
+      <div class="mnl-kpi"><b>${rc.length}</b><small>preguntas</small></div>
+      <div class="mnl-kpi"><b>${mnlProm(rc)!==null?mnlProm(rc)+'%':'—'}</b><small>avance prom.</small></div>
+      <div class="mnl-kpi"><b>${Math.max(0,totJard-jc.size)}</b><small>faltan</small></div>
+    </div>`;
+    html += '<p class="ayuda">Cada tabla del submódulo y cómo están sus preguntas en cada rango de %.</p>';
+    html += '<div style="overflow-x:auto"><table class="mnl-tab"><thead><tr><th style="text-align:left">Tabla</th>';
+    ESTADOS.forEach(e => { html += `<th>${esc(e.replace(/ a /," a "))}</th>`; });
+    html += '<th>Prom.</th></tr></thead><tbody>';
+    (comp ? comp.tablas : []).forEach(t => {
+      const rt = rc.filter(r => String(r.tabla) === String(t.num));
+      html += `<tr><td style="text-align:left">T${esc(t.num)} · ${esc(t.n)}</td>`;
+      ESTADOS.forEach(e => { const n = rt.filter(r => r.estado === e).length; html += `<td>${n||''}</td>`; });
+      const pt = mnlProm(rt);
+      html += `<td>${pt!==null?pt+'%':'—'}</td></tr>`;
+    });
+    html += '<tr style="font-weight:700;background:#f5f7fa"><td style="text-align:left">Total</td>';
+    ESTADOS.forEach(e => { const n = rc.filter(r => r.estado === e).length; html += `<td>${n||''}</td>`; });
+    html += `<td>${mnlProm(rc)!==null?mnlProm(rc)+'%':'—'}</td></tr>`;
+    html += '</tbody></table></div>';
+
+    // -------- PARTE 3: detalle uno a uno (filtrable por jardín + descarga Excel) --------
+    let regsLocComp = MNL.registros.map(r => ({ ...r, localidad: r.localidad || mnlLocDe(r.codigo) }));
+    if (mnlFiltroLoc) regsLocComp = regsLocComp.filter(r => r.localidad === mnlFiltroLoc);
+    if (mnlFiltroJar) regsLocComp = regsLocComp.filter(r => String(r.codigo) === mnlFiltroJar);
+    const jardCod = [...new Set(regsLocComp.filter(r => r.componente === mnlFiltroComp).map(r => String(r.codigo)))].sort();
+    if (mnlFiltroJar3 && jardCod.indexOf(mnlFiltroJar3) === -1) mnlFiltroJar3 = "";
+    const jar3Opts = jardCod.map(cod => `<option value="${cod}" ${cod===mnlFiltroJar3?'selected':''}>${cod} · ${esc(mnlNombre(cod))}</option>`).join("");
+    const rc3 = mnlFiltroJar3 ? rc.filter(r => String(r.codigo) === mnlFiltroJar3) : rc;
+    html += '<div class="mnl-sec"><h3>Tercer análisis · detalle por pregunta</h3>';
+    html += `<div class="mnl-filtros" style="align-items:center">
+      <select id="mnl-jar3" style="flex:1"><option value="">Ver por jardín infantil: todos</option>${jar3Opts}</select>
+      <button class="btn-excel" onclick="exportarManualDetalle()">\u2b07 Descargar Excel</button>
+    </div>`;
+    html += '<p class="ayuda">Cada componente de cada tabla con su rango de calificación y observaciones. Si una pregunta tuvo varias visitas, se toma el registro más reciente.</p>';
+    let hay = false;
+    (comp ? comp.tablas : []).forEach(t => {
+      t.items.forEach(it => {
+        const rq = rc3.filter(r => r.pregunta === it.c);
+        if (!rq.length) return;
+        hay = true;
+        rq.sort((a,b) => String(a.codigo).localeCompare(String(b.codigo)));
+        rq.forEach(r => {
+          const cls = CLASE_ESTADO[r.estado] || "";
+          html += `<div class="mnl-q">
+            <div style="display:flex;justify-content:space-between;gap:8px;align-items:flex-start">
+              <div style="flex:1"><b>${esc(it.c)}</b> <span style="font-size:11px;color:var(--tinta-2)">· T${esc(t.num)} ${esc(t.n)}</span><br>${esc(it.p)}</div>
+              <span class="mnl-badge ${cls}">${esc(r.estado)}</span>
+            </div>
+            <div style="font-size:11px;color:var(--tinta-2);margin-top:5px">${esc(r.codigo)} · ${esc(mnlNombre(r.codigo, r.jardin))}</div>
+            ${r.hallazgo ? `<div class="obs">\U0001F5D2 ${esc(r.hallazgo)}</div>` : ''}
+          </div>`;
+        });
+      });
+    });
+    if (!hay) html += '<p class="ayuda">Sin registros para este submódulo con los filtros actuales.</p>';
+    html += '</div>';
+  } else {
+    html += '<p class="ayuda">Elige un submódulo para ver el detalle por tabla y por pregunta.</p>';
+  }
+  html += '</div>';
+
+  cont.innerHTML = html;
+  const selLoc = $("mnl-loc"); if (selLoc) selLoc.onchange = e => { mnlFiltroLoc = e.target.value; mnlFiltroJar = ""; mnlFiltroJar3 = ""; pintarManual(); };
+  const selJar = $("mnl-jar"); if (selJar) selJar.onchange = e => { mnlFiltroJar = e.target.value; pintarManual(); };
+  const selComp = $("mnl-comp"); if (selComp) selComp.onchange = e => { mnlFiltroComp = e.target.value; pintarManual(); };
+  const selJar3 = $("mnl-jar3"); if (selJar3) selJar3.onchange = e => { mnlFiltroJar3 = e.target.value; pintarManual(); };
+}
+
+function exportarManualDetalle(){
+  if (!MNL) { alert("Primero carga el análisis del Manual."); return; }
+  if (!mnlFiltroComp) { alert("Elige un submódulo en el segundo análisis para exportar su detalle."); return; }
+  let regs = MNL.registros.map(r => ({ ...r, localidad: r.localidad || mnlLocDe(r.codigo) }));
+  if (mnlFiltroLoc) regs = regs.filter(r => r.localidad === mnlFiltroLoc);
+  if (mnlFiltroJar) regs = regs.filter(r => String(r.codigo) === mnlFiltroJar);
+  if (mnlFiltroJar3) regs = regs.filter(r => String(r.codigo) === mnlFiltroJar3);
+  const comp = INSTRUMENTO.componentes.find(c => c.n === mnlFiltroComp);
+  const rc = regs.filter(r => r.componente === mnlFiltroComp);
+  if (!rc.length) { alert("No hay registros para exportar con los filtros actuales."); return; }
+  const meta = {};
+  (comp ? comp.tablas : []).forEach(t => t.items.forEach(it => { meta[it.c] = { p: it.p, tnum: t.num, tnom: t.n }; }));
+  rc.sort((a,b) => String(a.codigo).localeCompare(String(b.codigo)) || String(a.pregunta).localeCompare(String(b.pregunta)));
+  const aoa = [["Localidad","LOC ID","Jardín","Submódulo","Tabla N°","Nombre tabla","Cód. pregunta","Pregunta","Rango de calificación","Observación"]];
+  rc.forEach(r => {
+    const m = meta[r.pregunta] || {};
+    aoa.push([ r.localidad || "", r.codigo, mnlNombre(r.codigo, r.jardin), r.componente, "T" + (m.tnum || r.tabla || ""), m.tnom || r.nombreTabla || "", r.pregunta, m.p || "", r.estado, r.hallazgo || "" ]);
+  });
+  const cols = [{wch:16},{wch:10},{wch:30},{wch:24},{wch:8},{wch:26},{wch:12},{wch:60},{wch:18},{wch:40}];
+  const limpio = s => String(s || "").normalize("NFD").replace(/[\u0300-\u036f]/g,"").replace(/[^A-Za-z0-9]+/g,"_").replace(/^_+|_+$/g,"").slice(0,24);
+  let nombre = "Manual_3er_analisis_" + limpio(mnlFiltroComp);
+  const jarSel = mnlFiltroJar3 || mnlFiltroJar;
+  if (jarSel) nombre += "_" + jarSel;
+  else if (mnlFiltroLoc) nombre += "_" + limpio(mnlFiltroLoc);
+  descargarXLSX(nombre, [{ nombre: "Detalle Manual", aoa: aoa, cols: cols }]);
+}
+
+document.addEventListener("DOMContentLoaded", () => {
+  const b = $("btn-tc-manual"); if (b) b.onclick = abrirManual;
+  const a = $("btn-mnl-actualizar"); if (a) a.onclick = cargarManualAnalisis;
+  const v = $("btn-mnl-volver"); if (v) v.onclick = abrirTablero;
+});
+
 document.addEventListener("DOMContentLoaded", () => {
   poblarLocalidades();
   $("btn-login").onclick = login;
