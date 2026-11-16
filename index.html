@@ -306,6 +306,19 @@
 .mnl-q{background:#fff;border:1px solid var(--linea);border-left:4px solid var(--azul);border-radius:8px;padding:10px;margin-bottom:6px}
 .mnl-q .obs{color:var(--tinta-2);font-size:12px;margin-top:6px;font-style:italic}
 .mnl-badge{display:inline-block;padding:3px 9px;border-radius:20px;font-size:11px;font-weight:700;white-space:nowrap}
+  /* --- Nov 2026 + Resumen TH vs Cobertura (2026-11-16) --- */
+  .g3.g4{grid-template-columns:repeat(4,1fr);gap:6px}
+  .g3.g4 input{padding-left:4px;padding-right:4px}
+  #tabla-cobertura td:first-child{width:26%}
+  #tabla-cobertura td{padding:0 2px}
+  #tabla-cobertura input{padding:9px 2px}
+  .rth-card{background:#fff;border:1px solid var(--linea);border-left:4px solid var(--azul);border-radius:10px;padding:12px;margin-bottom:10px}
+  .rth-card.rth-total{border-left-color:var(--amarillo);background:#FFFDF2}
+  .rth-card h3{font-size:15px;color:var(--azul);margin-bottom:6px}
+  .rth-fila{display:grid;grid-template-columns:108px 1fr;gap:8px;font-size:13px;padding:6px 0;border-top:1px solid var(--linea)}
+  .rth-fila b{color:var(--tinta-2);font-size:12px}
+  .rth-na{color:var(--tinta-2)}
+  .rth-nombres{font-size:13px;margin-top:6px;background:var(--fondo);border-radius:8px;padding:8px 10px}
 </style>
 <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
 </head>
@@ -427,7 +440,7 @@
     <div class="modulo oculto" data-mod="2">
       <div class="tarjeta">
         <h2>2. Talento humano · equipo base</h2>
-        <p class="ayuda">Registra el número de personas por perfil en cada corte y, para agosto 2026, los nombres de quienes ocupan cada perfil.</p>
+        <p class="ayuda">Registra el número de personas por perfil en cada corte y, para agosto y noviembre de 2026, los datos de quienes ocupan cada perfil.</p>
         <div id="lista-talento"></div>
         <label class="campo"><span>Observaciones del equipo base</span><textarea id="th-obs"></textarea></label>
       </div>
@@ -437,7 +450,7 @@
     <div class="modulo oculto" data-mod="3">
       <div class="tarjeta">
         <h2>3. Equipo de Apoyo</h2>
-        <p class="ayuda">Fecha de la última visita, número de visitas en los últimos dos meses y personas asociadas a cada equipo.</p>
+        <p class="ayuda">Para cada corte (Ago 2026 y Nov 2026): fecha de la última visita, número de visitas en los últimos dos meses y personas asociadas a cada equipo.</p>
         <div id="lista-transversal"></div>
       </div>
     </div>
@@ -448,7 +461,7 @@
         <h2>4. Cobertura</h2>
         <p class="ayuda">La proyección 2026 se precarga con el dato oficial; puedes ajustarla si el jardín reporta otro valor.</p>
         <table class="tabla" id="tabla-cobertura">
-          <thead><tr><th>Indicador</th><th>Oct 2025</th><th>Feb 2026</th><th>Ago 2026</th></tr></thead>
+          <thead><tr><th>Indicador</th><th>Oct 2025</th><th>Feb 2026</th><th>Ago 2026</th><th>Nov 2026</th></tr></thead>
           <tbody></tbody>
         </table>
       </div>
@@ -523,8 +536,17 @@
       </div>
     </div>
 
-    <!-- Módulo 8: Resumen y envío -->
+    <!-- Módulo 8: Resumen TH vs Cobertura -->
     <div class="modulo oculto" data-mod="8">
+      <div class="tarjeta">
+        <h2>8. Resumen TH vs Cobertura</h2>
+        <p class="ayuda">Se calcula solo con lo registrado en Talento humano, Equipo de Apoyo y Cobertura. No requiere diligenciamiento; si algo no cuadra, corrige el dato en su módulo.</p>
+        <div id="rth-cuerpo"></div>
+      </div>
+    </div>
+
+    <!-- Módulo 9: Resumen y envío -->
+    <div class="modulo oculto" data-mod="9">
       <div class="tarjeta resumen">
         <h2>Revisar y enviar</h2>
         <p class="ayuda">Al enviar se registra la visita con el formulario, las fotos y su consecutivo. La información se guarda de forma segura; los datos quedan disponibles en el seguimiento.</p>
@@ -565,7 +587,7 @@
    Si queda vacía, la app funciona en modo local y descarga el
    resultado como archivo JSON en lugar de enviarlo.
    ========================================================= */
-const APP_VERSION = "2026-09-08-borrador-por-usuario";
+const APP_VERSION = "2026-11-16-nov2026-resumen-th";
 const API_URL = "https://script.google.com/macros/s/AKfycbyaYVW6HSSqTLBgdNN78jNM2-cN0DGH_oAsIhsBE3TEmBDPr0RstKY4TMNigg7-3u0/exec";
 
 /* ---------- Catálogo de jardines ---------- */
@@ -626,12 +648,12 @@ const JARDINES = JARDINES_TSV.split("\n").map(l => {
 const LOCALIDADES = [...new Set(JARDINES.map(j => j.localidad))];
 
 const PERFILES = ["Responsable", "Profesional de atención a la primera infancia", "Auxiliar administrativo", "Auxiliar pedagógico"];
-const CORTES_TH = [["oct2025", "Oct 2025"], ["feb2026", "Feb 2026"], ["ago2026", "Ago 2026"]];
+const CORTES_TH = [["oct2025", "Oct 2025"], ["feb2026", "Feb 2026"], ["ago2026", "Ago 2026"], ["nov2026", "Nov 2026"]];
 const EQUIPOS = ["Equipo Entre Pares / Educadoras Especiales", "Equipo Psicosocial", "Nutricionistas - Enfermeras"];
 const COBERTURA = ["Cupos proyectados", "Cupos asignados", "Asistencia promedio"];
-const CORTES_COB = [["oct2025", "Oct 2025"], ["feb2026", "Feb 2026"], ["ago2026", "Ago 2026"]];
+const CORTES_COB = [["oct2025", "Oct 2025"], ["feb2026", "Feb 2026"], ["ago2026", "Ago 2026"], ["nov2026", "Nov 2026"]];
 const PRIORIZACION = ["Discapacidad", "Etnias", "Víctimas", "Desnutrición", "Niñas y niños de papás con trabajo nocturno", "Niñas y niños de papás que estudian de noche"];
-const MODULOS = ["Plantas físicas", "Talento humano", "Equipo de Apoyo", "Cobertura", "Priorización", "Manual", "Alertas", "Enviar"];
+const MODULOS = ["Plantas físicas", "Talento humano", "Equipo de Apoyo", "Cobertura", "Priorización", "Manual", "Alertas", "Resumen TH", "Enviar"];
 const BANDAS = ["0% a 30%", "31% a 60%", "61% a 80%", "81% a 100%"];
 const BANDA_VAL = { "0% a 30%": 15, "31% a 60%": 45, "61% a 80%": 70, "81% a 100%": 90 };
 const ESTADOS = [...BANDAS, "No aplica", "No verificado"];
@@ -682,7 +704,7 @@ const $ = id => document.getElementById(id);
 /* Almacenamiento local tolerante (algunos entornos lo bloquean) */
 const store = {
   get(k) { try { return JSON.parse(localStorage.getItem(k)); } catch (e) { return null; } },
-  set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} },
+  set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); return true; } catch (e) { return false; } },
   del(k) { try { localStorage.removeItem(k); } catch (e) {} }
 };
 
@@ -701,6 +723,7 @@ function cargando(on, texto) {
 
 /* ---------- Backend ---------- */
 async function api(payload) {
+  if (sesion && sesion.token && payload.action !== "login") payload.token = sesion.token;
   let r;
   try {
     r = await fetch(API_URL, {
@@ -713,7 +736,13 @@ async function api(payload) {
     throw new Error("No se pudo conectar con el servidor. Revisa la conexión a internet y que la URL del servicio esté publicada con acceso para cualquiera.");
   }
   const t = await r.text();
-  try { return JSON.parse(t); } catch (e) { throw new Error("El servidor respondió algo inesperado (¿la app web pide iniciar sesión?): " + t.slice(0, 120)); }
+  let j;
+  try { j = JSON.parse(t); } catch (e) { throw new Error("El servidor respondió algo inesperado (¿la app web pide iniciar sesión?): " + t.slice(0, 120)); }
+  if (j && j.sesion === false) {
+    sesionVencida();
+    throw new Error("Tu sesión venció. Ingresa de nuevo; el borrador sigue guardado en este dispositivo.");
+  }
+  return j;
 }
 
 /* ---------- Login ---------- */
@@ -732,7 +761,7 @@ async function login() {
     try {
       const res = await api({ action: "login", usuario, clave });
       if (!res.ok) throw new Error(res.error || "Usuario o contraseña incorrectos.");
-      sesion = { usuario, nombre: res.nombre, rol: res.rol };
+      sesion = { usuario, nombre: res.nombre, rol: res.rol, token: res.token || "" };
     } catch (e) {
       err.textContent = e.message; err.classList.remove("oculto");
       $("btn-login").disabled = false; $("login-estado").textContent = "";
@@ -748,6 +777,16 @@ async function login() {
 function salir() {
   sesion = null; store.del(CLAVE_SESION);
   mostrar("p-login");
+}
+
+// El backend rechazó la sesión (venció o cambió la contraseña): se pide ingresar de nuevo sin tocar el borrador.
+function sesionVencida(msg) {
+  sesion = null; store.del(CLAVE_SESION);
+  cargando(false);
+  mostrar("p-login");
+  const err = $("login-error");
+  err.textContent = msg || "Tu sesión venció. Ingresa de nuevo; tu borrador sigue guardado en este dispositivo.";
+  err.classList.remove("oculto");
 }
 
 /* ---------- Selección ---------- */
@@ -790,10 +829,11 @@ function cambioJardin() {
 }
 
 function nuevoAcompanamiento(j) {
-  const th = {}; PERFILES.forEach(p => { th[p] = { oct2025: "", feb2026: "", ago2026: "", personas: [] }; });
-  const tr = {}; EQUIPOS.forEach(e => { tr[e] = { ultimaVisita: "", visitas2Meses: "", numPersonas: "", personas: [] }; });
-  const cob = {}; COBERTURA.forEach(c => { cob[c] = { oct2025: "", feb2026: "", ago2026: "" }; });
+  const th = {}; PERFILES.forEach(p => { th[p] = { oct2025: "", feb2026: "", ago2026: "", nov2026: "", personas: [], personasNov: [] }; });
+  const tr = {}; EQUIPOS.forEach(e => { tr[e] = { ultimaVisita: "", visitas2Meses: "", numPersonas: "", personas: [], ultimaVisitaNov: "", visitas2MesesNov: "", numPersonasNov: "", personasNov: [] }; });
+  const cob = {}; COBERTURA.forEach(c => { cob[c] = { oct2025: "", feb2026: "", ago2026: "", nov2026: "" }; });
   cob["Cupos proyectados"].ago2026 = String(j.cupos);
+  cob["Cupos proyectados"].nov2026 = String(j.cupos);
   const pr = {}; PRIORIZACION.forEach(p => { pr[p] = ""; });
   return {
     inicio: new Date().toISOString(),
@@ -842,6 +882,9 @@ function fusionarPrevio(j, prev) {
   PERFILES.forEach(p => { if (prev.talentoHumano && prev.talentoHumano[p]) nuevo.talentoHumano[p] = Object.assign(nuevo.talentoHumano[p], prev.talentoHumano[p]); });
   EQUIPOS.forEach(e => { if (prev.transversal && prev.transversal[e]) nuevo.transversal[e] = Object.assign(nuevo.transversal[e], prev.transversal[e]); });
   COBERTURA.forEach(c => { if (prev.cobertura && prev.cobertura[c]) nuevo.cobertura[c] = Object.assign(nuevo.cobertura[c], prev.cobertura[c]); });
+  // La proyección de Nov 2026 se precarga con el dato oficial si la visita anterior no la traía
+  const proy = nuevo.cobertura["Cupos proyectados"];
+  if (proy.nov2026 === "" || proy.nov2026 === undefined || proy.nov2026 === null) proy.nov2026 = String(j.cupos);
   PRIORIZACION.forEach(p => { if (prev.priorizacion && prev.priorizacion[p] !== undefined) nuevo.priorizacion[p] = prev.priorizacion[p]; });
   if (prev.instrumento && typeof prev.instrumento === "object") nuevo.instrumento = prev.instrumento;
   if (prev.equipoObservaciones) nuevo.equipoObservaciones = prev.equipoObservaciones;
@@ -852,14 +895,39 @@ function fusionarPrevio(j, prev) {
 
 function continuarBorrador() { aud = store.get(claveBorrador()); if (aud) abrirAcompanamiento(); }
 function descartarBorrador() { store.del(claveBorrador()); $("borrador-aviso").classList.add("oculto"); }
-function guardarBorrador() { if (aud) { store.set(claveBorrador(), aud); $("acomp-estado").textContent = "Borrador guardado en este dispositivo"; } }
+function guardarBorrador() {
+  if (!aud || !sesion) return;
+  const ok = store.set(claveBorrador(), aud);
+  const e = $("acomp-estado");
+  e.textContent = ok ? "Borrador guardado en este dispositivo" : "⚠ No se pudo guardar el borrador: el almacenamiento del dispositivo está lleno (suele pasar con muchas fotos). Envía el acompañamiento antes de cerrar la app.";
+  e.style.color = ok ? "" : "var(--rojo)";
+  e.style.fontWeight = ok ? "" : "700";
+}
 
 /* ---------- Acompañamiento ---------- */
 function abrirAcompanamiento() {
   aud.instrumento = aud.instrumento || {};
   aud.equipoObservaciones = aud.equipoObservaciones || "";
-  PERFILES.forEach(p => { if (aud.talentoHumano[p] && !Array.isArray(aud.talentoHumano[p].personas)) aud.talentoHumano[p].personas = []; });
-  EQUIPOS.forEach(e => { const t = aud.transversal[e]; if (t) { if (!Array.isArray(t.personas)) t.personas = []; if (t.numPersonas === undefined) t.numPersonas = ""; } });
+  // Normaliza borradores y visitas anteriores que no traían el corte Nov 2026
+  const vacio = (o, k) => { if (o[k] === undefined || o[k] === null) o[k] = ""; };
+  aud.talentoHumano = aud.talentoHumano || {}; aud.transversal = aud.transversal || {}; aud.cobertura = aud.cobertura || {};
+  PERFILES.forEach(p => {
+    const t = aud.talentoHumano[p] || (aud.talentoHumano[p] = {});
+    ["oct2025", "feb2026", "ago2026", "nov2026"].forEach(k => vacio(t, k));
+    if (!Array.isArray(t.personas)) t.personas = [];
+    if (!Array.isArray(t.personasNov)) t.personasNov = [];
+  });
+  EQUIPOS.forEach(e => {
+    const t = aud.transversal[e] || (aud.transversal[e] = {});
+    ["ultimaVisita", "visitas2Meses", "numPersonas", "ultimaVisitaNov", "visitas2MesesNov", "numPersonasNov"].forEach(k => vacio(t, k));
+    if (!Array.isArray(t.personas)) t.personas = [];
+    if (!Array.isArray(t.personasNov)) t.personasNov = [];
+  });
+  COBERTURA.forEach(c => {
+    const t = aud.cobertura[c] || (aud.cobertura[c] = {});
+    ["oct2025", "feb2026", "ago2026", "nov2026"].forEach(k => vacio(t, k));
+  });
+  if (aud.cobertura["Cupos proyectados"].nov2026 === "") aud.cobertura["Cupos proyectados"].nov2026 = String(aud.cuposProyectados2026 || "");
   let cab = `<b>${aud.codigo} · ${aud.jardin}</b><br>${aud.localidad} · Proyección 2026: ${aud.cuposProyectados2026} cupos`;
   if (aud.__precargado) cab += `<br><span style="color:var(--verde);font-weight:700">✓ Datos precargados de la última visita (${fmtFecha(aud.__precargado)}). Revisa y actualiza; al enviar se guarda como visita nueva sin borrar la anterior.</span>`;
   else if (aud.__precargaNota) cab += `<br><span style="color:var(--rojo);font-weight:600">${aud.__precargaNota}</span>`;
@@ -885,11 +953,12 @@ function moduloListo(n) {
   switch (n) {
     case 1: return aud.salones.length > 0 && aud.salones.every(s => num(s.area2026) && num(s.cupos2026));
     case 2: return PERFILES.some(p => CORTES_TH.some(([k]) => num(aud.talentoHumano[p][k])));
-    case 3: return EQUIPOS.some(e => num(aud.transversal[e].ultimaVisita));
-    case 4: return COBERTURA.every(c => num(aud.cobertura[c].ago2026));
+    case 3: return EQUIPOS.some(e => num(aud.transversal[e].ultimaVisita) || num(aud.transversal[e].ultimaVisitaNov));
+    case 4: return COBERTURA.every(c => num(aud.cobertura[c].nov2026));
     case 5: return PRIORIZACION.some(p => num(aud.priorizacion[p]));
     case 6: return Object.values(aud.instrumento || {}).some(v => v.estado);
     case 7: return aud.anexos.length > 0;
+    case 8: return moduloListo(2) && moduloListo(4); // resumen calculado: listo cuando hay TH y cobertura
     default: return false;
   }
 }
@@ -904,6 +973,7 @@ function irModulo(n) {
   const act = $("modulos").children[n - 1]; if (act) act.scrollIntoView({ inline: "center", block: "nearest", behavior: "smooth" });
   $("btn-ant").disabled = n === 1;
   $("btn-sig").classList.toggle("oculto", n === MODULOS.length);
+  if (n === 8) renderResumenTH();
   if (n === MODULOS.length) renderResumen();
   window.scrollTo(0, 0);
 }
@@ -943,6 +1013,11 @@ function agregarSalon() {
 }
 
 /* Módulo 2 */
+const CORTES_PERSONAS = [["ago", "ago2026", "personas", "Ago 2026"], ["nov", "nov2026", "personasNov", "Nov 2026"]];
+const PERSONA_VACIA = () => ({ nombre: "", cedula: "", genero: "", experiencia: "", educacion: "", fechaNac: "", vinculacion: "" });
+const attr = s => String(s == null ? "" : s).replace(/&/g, "&amp;").replace(/"/g, "&quot;").replace(/</g, "&lt;");
+const NOTA_COPIA = '<p class="ayuda" style="font-size:12px;margin:0 0 8px">Al indicar la cantidad de Nov 2026 se copian los datos de Ago 2026; corrige solo lo que cambió.</p>';
+
 function renderTalento() {
   const c = $("lista-talento"); c.innerHTML = "";
   PERFILES.forEach((p, i) => {
@@ -951,20 +1026,18 @@ function renderTalento() {
     d.innerHTML = `
       <div class="enc"><b>${p}</b></div>
       <div class="col-tit">Personas por corte</div>
-      <div class="g3">
-        <label class="campo"><span>Oct 2025</span><input type="number" inputmode="numeric" min="0" data-p="${p}" data-k="oct2025" value="${v.oct2025}"></label>
-        <label class="campo"><span>Feb 2026</span><input type="number" inputmode="numeric" min="0" data-p="${p}" data-k="feb2026" value="${v.feb2026}"></label>
-        <label class="campo"><span>Ago 2026</span><input type="number" inputmode="numeric" min="0" data-p="${p}" data-k="ago2026" value="${v.ago2026}"></label>
+      <div class="g3 g4">
+        ${CORTES_TH.map(([k, etq]) => `<label class="campo"><span>${etq}</span><input type="number" inputmode="numeric" min="0" data-p="${p}" data-k="${k}" value="${attr(v[k])}"></label>`).join("")}
       </div>
-      <div class="personas-tit">Personas (Ago 2026)</div>
-      <div class="personas" id="personas-${i}"></div>`;
+      ${CORTES_PERSONAS.map(([corte, , , etq]) => `<div class="personas-tit">Personas (${etq})</div>${corte === "nov" ? NOTA_COPIA : ""}<div class="personas" id="personas-${corte}-${i}"></div>`).join("")}`;
     c.appendChild(d);
-    renderPersonas(p, i);
+    CORTES_PERSONAS.forEach(([corte]) => renderPersonas(p, i, corte));
   });
   c.querySelectorAll("input[data-k]").forEach(inp => inp.addEventListener("input", e => {
     const p = e.target.dataset.p, k = e.target.dataset.k;
     aud.talentoHumano[p][k] = e.target.value; guardarBorrador();
-    if (k === "ago2026") renderPersonas(p, PERFILES.indexOf(p));
+    const def = CORTES_PERSONAS.find(x => x[1] === k);
+    if (def) renderPersonas(p, PERFILES.indexOf(p), def[0]);
   }));
   $("th-obs").value = aud.equipoObservaciones || "";
   $("th-obs").oninput = e => { aud.equipoObservaciones = e.target.value; guardarBorrador(); };
@@ -981,56 +1054,65 @@ function calcularEdad(fechaNac) {
   return (e >= 0 && e < 120) ? e : "";
 }
 
-function renderPersonas(p, i) {
-  const cont = $("personas-" + i);
+function renderPersonas(p, i, corte) {
+  const def = CORTES_PERSONAS.find(x => x[0] === corte);
+  const kCnt = def[1], kLista = def[2], etq = def[3];
+  const cont = $(`personas-${corte}-${i}`);
   if (!cont) return;
   const v = aud.talentoHumano[p];
-  const n = Math.max(0, Math.min(30, Number(v.ago2026) || 0));
-  v.personas = v.personas || [];
-  while (v.personas.length < n) v.personas.push({ nombre: "", cedula: "", genero: "", experiencia: "", educacion: "", fechaNac: "", vinculacion: "" });
-  if (v.personas.length > n) v.personas = v.personas.slice(0, n);
-  if (!n) { cont.innerHTML = '<p class="ayuda" style="margin:0">Indica la cantidad en "Ago 2026" para habilitar las casillas de cada persona.</p>'; guardarBorrador(); return; }
-  cont.innerHTML = v.personas.map((per, k) => `
+  const n = Math.max(0, Math.min(30, Number(v[kCnt]) || 0));
+  let lista = Array.isArray(v[kLista]) ? v[kLista] : [];
+  while (lista.length < n) {
+    // La lista de Nov 2026 arranca con los datos de la misma posición en Ago 2026
+    const base = corte === "nov" ? (v.personas || [])[lista.length] : null;
+    lista.push(base && (base.nombre || base.cedula) ? Object.assign(PERSONA_VACIA(), base) : PERSONA_VACIA());
+  }
+  if (lista.length > n) lista = lista.slice(0, n);
+  v[kLista] = lista;
+  if (!n) { cont.innerHTML = `<p class="ayuda" style="margin:0">Indica la cantidad en "${etq}" para habilitar las casillas de cada persona.</p>`; guardarBorrador(); return; }
+  cont.innerHTML = lista.map((per, k) => `
     <div class="persona-card">
-      <div class="persona-num">Persona ${k + 1}</div>
-      <label class="campo"><span>Nombre completo (nombre y apellido)</span><input type="text" placeholder="Nombre y apellido" data-per="${p}" data-idx="${k}" data-campo="nombre" value="${(per.nombre || "").replace(/"/g, "&quot;")}"></label>
+      <div class="persona-num">Persona ${k + 1} · ${etq}</div>
+      <label class="campo"><span>Nombre completo (nombre y apellido)</span><input type="text" placeholder="Nombre y apellido" data-idx="${k}" data-campo="nombre" value="${attr(per.nombre)}"></label>
       <div class="g2">
-        <label class="campo"><span>Cédula</span><input type="text" inputmode="numeric" placeholder="Solo números" data-per="${p}" data-idx="${k}" data-campo="cedula" value="${per.cedula || ""}"></label>
+        <label class="campo"><span>Cédula</span><input type="text" inputmode="numeric" placeholder="Solo números" data-idx="${k}" data-campo="cedula" value="${attr(per.cedula)}"></label>
         <label class="campo"><span>Género</span>
-          <select data-per="${p}" data-idx="${k}" data-campo="genero">
+          <select data-idx="${k}" data-campo="genero">
             <option value="">— Selecciona —</option>
             ${["Masculino", "Femenino", "No responde"].map(o => `<option ${per.genero === o ? "selected" : ""}>${o}</option>`).join("")}
           </select>
         </label>
       </div>
       <div class="g2">
-        <label class="campo"><span>Años de experiencia profesional</span><input type="text" inputmode="numeric" placeholder="Ej: 5" data-per="${p}" data-idx="${k}" data-campo="experiencia" value="${per.experiencia || ""}"></label>
+        <label class="campo"><span>Años de experiencia profesional</span><input type="text" inputmode="numeric" placeholder="Ej: 5" data-idx="${k}" data-campo="experiencia" value="${attr(per.experiencia)}"></label>
         <label class="campo"><span>Máximo nivel educativo</span>
-          <select data-per="${p}" data-idx="${k}" data-campo="educacion">
+          <select data-idx="${k}" data-campo="educacion">
             <option value="">— Selecciona —</option>
             ${["Bachiller", "Técnico", "Tecnólogo", "Profesional", "Especialización", "Maestría", "Doctorado"].map(o => `<option ${per.educacion === o ? "selected" : ""}>${o}</option>`).join("")}
           </select>
         </label>
       </div>
       <div class="g2">
-        <label class="campo"><span>Fecha de nacimiento</span><input type="date" data-per="${p}" data-idx="${k}" data-campo="fechaNac" value="${per.fechaNac || ""}"></label>
-        <label class="campo"><span>Edad a hoy</span><input type="text" readonly class="edad" id="edad-${i}-${k}" value="${per.fechaNac ? (calcularEdad(per.fechaNac) + " años") : ""}"></label>
+        <label class="campo"><span>Fecha de nacimiento</span><input type="date" data-idx="${k}" data-campo="fechaNac" value="${attr(per.fechaNac)}"></label>
+        <label class="campo"><span>Edad a hoy</span><input type="text" readonly class="edad" id="edad-${corte}-${i}-${k}" value="${per.fechaNac && calcularEdad(per.fechaNac) !== "" ? (calcularEdad(per.fechaNac) + " años") : ""}"></label>
       </div>
       <label class="campo"><span>Tipo de vinculación</span>
-        <select data-per="${p}" data-idx="${k}" data-campo="vinculacion">
+        <select data-idx="${k}" data-campo="vinculacion">
           <option value="">— Selecciona —</option>
           ${["Planta", "Contratista"].map(o => `<option ${per.vinculacion === o ? "selected" : ""}>${o}</option>`).join("")}
         </select>
       </label>
     </div>`).join("");
   cont.querySelectorAll("input, select").forEach(el => el.addEventListener("input", e => {
-    const per = aud.talentoHumano[e.target.dataset.per].personas[Number(e.target.dataset.idx)];
+    const idx = Number(e.target.dataset.idx);
+    const per = aud.talentoHumano[p][kLista][idx];
     const campo = e.target.dataset.campo;
+    if (!per || !campo) return;
     let val = e.target.value;
     if (campo === "cedula" || campo === "experiencia") { val = val.replace(/[^0-9]/g, ""); e.target.value = val; }
     per[campo] = val;
     if (campo === "fechaNac") {
-      const ed = $("edad-" + i + "-" + Number(e.target.dataset.idx));
+      const ed = $(`edad-${corte}-${i}-${idx}`);
       if (ed) { const a = calcularEdad(val); ed.value = a === "" ? "" : (a + " años"); }
     }
     guardarBorrador();
@@ -1039,47 +1121,60 @@ function renderPersonas(p, i) {
 }
 
 /* Módulo 3 */
+const CORTES_APOYO = [
+  { corte: "ago", etq: "Ago 2026", fecha: "ultimaVisita", visitas: "visitas2Meses", num: "numPersonas", lista: "personas" },
+  { corte: "nov", etq: "Nov 2026", fecha: "ultimaVisitaNov", visitas: "visitas2MesesNov", num: "numPersonasNov", lista: "personasNov" }
+];
+
 function renderTransversal() {
   const c = $("lista-transversal"); c.innerHTML = "";
   EQUIPOS.forEach((eq, i) => {
     const v = aud.transversal[eq];
     const d = document.createElement("div"); d.className = "salon";
-    d.innerHTML = `<div class="enc"><b>${eq}</b></div>
+    d.innerHTML = `<div class="enc"><b>${eq}</b></div>` + CORTES_APOYO.map((ct, x) => `
+      <div class="col-tit" style="${x ? "margin-top:18px;padding-top:12px;border-top:1px solid var(--linea)" : ""}">${ct.etq}</div>
       <div class="g2">
-        <label class="campo"><span>Fecha de la última visita</span><input type="date" data-e="${eq}" data-k="ultimaVisita" value="${v.ultimaVisita || ""}"></label>
-        <label class="campo"><span>Visitas en los últimos 2 meses</span><input type="number" inputmode="numeric" min="0" data-e="${eq}" data-k="visitas2Meses" value="${v.visitas2Meses || ""}"></label>
+        <label class="campo"><span>Fecha de la última visita</span><input type="date" data-e="${eq}" data-k="${ct.fecha}" value="${attr(v[ct.fecha])}"></label>
+        <label class="campo"><span>Visitas en los últimos 2 meses</span><input type="number" inputmode="numeric" min="0" data-e="${eq}" data-k="${ct.visitas}" value="${attr(v[ct.visitas])}"></label>
       </div>
-      <label class="campo" style="margin-top:10px"><span>Número de personas del equipo</span><input type="number" inputmode="numeric" min="0" max="30" data-np="${eq}" value="${v.numPersonas || ""}"></label>
-      <div class="personas-tit">Personas</div>
-      <div class="personas" id="apoyo-personas-${i}"></div>`;
+      <label class="campo" style="margin-top:10px"><span>Número de personas del equipo (${ct.etq})</span><input type="number" inputmode="numeric" min="0" max="30" data-np="${eq}" data-corte="${ct.corte}" value="${attr(v[ct.num])}"></label>
+      <div class="personas-tit">Personas (${ct.etq})</div>${ct.corte === "nov" ? NOTA_COPIA : ""}
+      <div class="personas" id="apoyo-personas-${ct.corte}-${i}"></div>`).join("");
     c.appendChild(d);
-    renderPersonasApoyo(eq, i);
+    CORTES_APOYO.forEach(ct => renderPersonasApoyo(eq, i, ct.corte));
   });
   c.querySelectorAll("input[data-k]").forEach(inp => inp.addEventListener("input", e => {
     aud.transversal[e.target.dataset.e][e.target.dataset.k] = e.target.value; guardarBorrador();
   }));
   c.querySelectorAll("input[data-np]").forEach(inp => inp.addEventListener("input", e => {
-    aud.transversal[e.target.dataset.np].numPersonas = e.target.value; guardarBorrador();
-    renderPersonasApoyo(e.target.dataset.np, EQUIPOS.indexOf(e.target.dataset.np));
+    const eq = e.target.dataset.np, ct = CORTES_APOYO.find(x => x.corte === e.target.dataset.corte);
+    aud.transversal[eq][ct.num] = e.target.value; guardarBorrador();
+    renderPersonasApoyo(eq, EQUIPOS.indexOf(eq), ct.corte);
   }));
 }
 
-function renderPersonasApoyo(eq, i) {
-  const cont = $("apoyo-personas-" + i);
+function renderPersonasApoyo(eq, i, corte) {
+  const ct = CORTES_APOYO.find(x => x.corte === corte);
+  const cont = $(`apoyo-personas-${corte}-${i}`);
   if (!cont) return;
   const v = aud.transversal[eq];
-  const n = Math.max(0, Math.min(30, Number(v.numPersonas) || 0));
-  v.personas = v.personas || [];
-  while (v.personas.length < n) v.personas.push({ nombre: "", cedula: "" });
-  if (v.personas.length > n) v.personas = v.personas.slice(0, n);
-  if (!n) { cont.innerHTML = '<p class="ayuda" style="margin:0">Indica el número de personas para habilitar las casillas de nombre y cédula.</p>'; guardarBorrador(); return; }
+  const n = Math.max(0, Math.min(30, Number(v[ct.num]) || 0));
+  let lista = Array.isArray(v[ct.lista]) ? v[ct.lista] : [];
+  while (lista.length < n) {
+    const base = corte === "nov" ? (v.personas || [])[lista.length] : null;
+    lista.push(base && (base.nombre || base.cedula) ? { nombre: base.nombre || "", cedula: base.cedula || "" } : { nombre: "", cedula: "" });
+  }
+  if (lista.length > n) lista = lista.slice(0, n);
+  v[ct.lista] = lista;
+  if (!n) { cont.innerHTML = `<p class="ayuda" style="margin:0">Indica el número de personas de ${ct.etq} para habilitar las casillas de nombre y cédula.</p>`; guardarBorrador(); return; }
   cont.innerHTML = '<div class="personas-cab"><span>Nombre completo (nombre y apellido)</span><span>Cédula</span></div>' +
-    v.personas.map((per, k) => `<div class="persona-fila">
-      <input type="text" placeholder="Nombre y apellido" data-ap="${eq}" data-idx="${k}" data-campo="nombre" value="${(per.nombre || "").replace(/"/g, "&quot;")}">
-      <input type="text" inputmode="numeric" placeholder="Cédula" data-ap="${eq}" data-idx="${k}" data-campo="cedula" value="${per.cedula || ""}">
+    lista.map((per, k) => `<div class="persona-fila">
+      <input type="text" placeholder="Nombre y apellido" data-idx="${k}" data-campo="nombre" value="${attr(per.nombre)}">
+      <input type="text" inputmode="numeric" placeholder="Cédula" data-idx="${k}" data-campo="cedula" value="${attr(per.cedula)}">
     </div>`).join("");
   cont.querySelectorAll("input").forEach(inp => inp.addEventListener("input", e => {
-    const per = aud.transversal[e.target.dataset.ap].personas[Number(e.target.dataset.idx)];
+    const per = aud.transversal[eq][ct.lista][Number(e.target.dataset.idx)];
+    if (!per) return;
     if (e.target.dataset.campo === "cedula") { e.target.value = e.target.value.replace(/[^0-9]/g, ""); per.cedula = e.target.value; }
     else per.nombre = e.target.value;
     guardarBorrador();
@@ -1092,7 +1187,7 @@ function renderCobertura() {
   const tb = $("tabla-cobertura").querySelector("tbody"); tb.innerHTML = "";
   COBERTURA.forEach(cb => {
     const tr = document.createElement("tr");
-    tr.innerHTML = `<td>${cb}</td>` + CORTES_COB.map(([k]) => `<td><input type="number" inputmode="numeric" min="0" data-c="${cb}" data-k="${k}" value="${aud.cobertura[cb][k]}"></td>`).join("");
+    tr.innerHTML = `<td>${cb}</td>` + CORTES_COB.map(([k]) => `<td><input type="number" inputmode="numeric" min="0" data-c="${cb}" data-k="${k}" value="${attr(aud.cobertura[cb][k])}"></td>`).join("");
     tb.appendChild(tr);
   });
   tb.querySelectorAll("input").forEach(i => i.addEventListener("input", e => { aud.cobertura[e.target.dataset.c][e.target.dataset.k] = e.target.value; guardarBorrador(); }));
@@ -1301,7 +1396,9 @@ function renderResumen() {
     <dt>Área total 2026 (m²)</dt><dd>${aud.salones.reduce((t, s) => t + (Number(s.area2026) || 0), 0).toFixed(1)}</dd>
     <dt>Cupos proyectados por salón 2026</dt><dd>${aud.salones.reduce((t, s) => t + (Number(s.cupos2026) || 0), 0)}</dd>
     <dt>Equipo base Ago 2026</dt><dd>${suma(aud.talentoHumano, "ago2026")} personas</dd>
+    <dt>Equipo base Nov 2026</dt><dd>${suma(aud.talentoHumano, "nov2026")} personas</dd>
     <dt>Cupos asignados Ago 2026</dt><dd>${aud.cobertura["Cupos asignados"].ago2026 || "—"}</dd>
+    <dt>Cupos asignados Nov 2026</dt><dd>${aud.cobertura["Cupos asignados"].nov2026 || "—"}</dd>
     <dt>Niños/as priorizados</dt><dd>${Object.values(aud.priorizacion).reduce((t, v) => t + (Number(v) || 0), 0)}</dd>
     <dt>Ítems del Manual evaluados</dt><dd>${Object.values(aud.instrumento || {}).filter(v => v.estado).length} de ${TOTAL_ITEMS}</dd>
     <dt>Ítems en 0% a 30%</dt><dd>${Object.values(aud.instrumento || {}).filter(v => v.estado === "0% a 30%").length}</dd>
@@ -1357,8 +1454,177 @@ function finalizar(res) {
   $("fin-anexos").innerHTML = res.anexos && res.anexos.length
     ? "<p class='ayuda'>Consecutivos asignados:</p>" + res.anexos.map(a => `<span class="chip">${a.consecutivo}</span> `).join("")
     : "";
+  if (res.avisoResumen) $("fin-anexos").innerHTML += `<div class="aviso aviso-info" style="margin-top:10px">${escH(res.avisoResumen)}</div>`;
   aud = null;
   mostrar("p-fin");
+}
+
+/* ---------- Resumen TH vs Cobertura (misma función en index.html y Code.gs) ----------
+   Recibe un acompañamiento y devuelve, por rol, el texto de cada corte y los nombres del TH. */
+function resumenTHCobertura(a) {
+  a = a || {};
+  var CORTES = ["oct2025", "feb2026", "ago2026", "nov2026"];
+  var NA = "NO APLICA";
+  var th = a.talentoHumano || {}, tv = a.transversal || {}, cob = a.cobertura || {};
+
+  function n(v) { if (v === "" || v === null || v === undefined) return null; var x = Number(v); return isNaN(x) ? null : x; }
+  function pl(c, uno, varios) { return c + " " + (c === 1 ? uno : varios); }
+  function cupos(k) { return n((cob["Cupos asignados"] || {})[k]); }
+  function listaNombres(arrs) {
+    var vistos = {}, out = [];
+    arrs.forEach(function (arr) {
+      (Array.isArray(arr) ? arr : []).forEach(function (p) {
+        var nom = String((p && p.nombre) || "").replace(/\s+/g, " ").trim();
+        if (!nom) return;
+        var k = nom.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "");
+        if (vistos[k]) return;
+        vistos[k] = true; out.push(nom);
+      });
+    });
+    return out;
+  }
+  function unir(l) { return l.length <= 1 ? l.join("") : l.slice(0, -1).join(", ") + " y " + l[l.length - 1]; }
+  function fraseNombres(etq, l) {
+    if (!l.length) return NA;
+    return "En el 2026 el Talento humano bajo el rol de " + etq + (l.length === 1 ? " fue: " : " fueron: ") + unir(l) + ".";
+  }
+
+  var BASE = [
+    { clave: "Profesional de atención a la primera infancia", rol: "Profesional API", etq: "Profesionales API", tipo: "api" },
+    { clave: "Responsable", rol: "Responsable", etq: "Responsable", tipo: "resp" },
+    { clave: "Auxiliar pedagógico", rol: "Aux. Pedagógica", etq: "Aux. Pedagógica", tipo: "aux" },
+    { clave: "Auxiliar administrativo", rol: "Aux. Administrativa", etq: "Aux. Administrativa", tipo: "aux" }
+  ];
+  var APOYO = [
+    { clave: "Equipo Entre Pares / Educadoras Especiales", rol: "Educadoras Especiales", etq: "Educadoras Especiales" },
+    { clave: "Equipo Psicosocial", rol: "Equipo Psicosocial", etq: "Equipo Psicosocial" },
+    { clave: "Nutricionistas - Enfermeras", rol: "Nutricionistas", etq: "Nutricionistas" }
+  ];
+  var APOYO_CAMPOS = {
+    ago2026: { num: "numPersonas", visitas: "visitas2Meses", fecha: "ultimaVisita" },
+    nov2026: { num: "numPersonasNov", visitas: "visitas2MesesNov", fecha: "ultimaVisitaNov" }
+  };
+
+  var filas = [], ratio = {}, totBase = {}, totApoyo = {};
+  CORTES.forEach(function (k) { ratio[k] = null; totBase[k] = null; totApoyo[k] = null; });
+
+  BASE.forEach(function (b) {
+    var v = th[b.clave] || {};
+    var fila = { rol: b.rol };
+    CORTES.forEach(function (k) {
+      var m = n(v[k]), c = cupos(k), txt;
+      if (m !== null) totBase[k] = (totBase[k] || 0) + m;
+      if (b.tipo === "api") {
+        if (!m) txt = NA;
+        else if (!c) txt = "Tuvo " + pl(m, "Profesional API", "Profesionales API") + "; sin dato de cupos asignados.";
+        else {
+          ratio[k] = Math.round(c / m);
+          txt = "Para " + pl(c, "cupo asignado", "cupos asignados") + ", tuvo " + pl(m, "Profesional API", "Profesionales API") +
+            ", es decir, una maestra tiene asignados " + ratio[k] + " niñas y niños.";
+        }
+      } else if (b.tipo === "resp") {
+        if (!m) txt = NA;
+        else if (!c) txt = "Hubo " + pl(m, "responsable", "responsables") + "; sin dato de cupos asignados.";
+        else txt = "Para " + pl(c, "cupo asignado", "cupos asignados") + ", hubo " + pl(m, "responsable", "responsables") + ".";
+      } else {
+        if (m === null) txt = NA;
+        else if (m === 0) txt = "No hubo " + b.rol + ".";
+        else txt = "Hubo " + m + " " + b.rol + ".";
+      }
+      fila[k] = txt;
+    });
+    fila.nombres = fraseNombres(b.etq, listaNombres([v.personas, v.personasNov]));
+    filas.push(fila);
+  });
+
+  APOYO.forEach(function (q) {
+    var v = tv[q.clave] || {};
+    var fila = { rol: q.rol };
+    CORTES.forEach(function (k) {
+      var campos = APOYO_CAMPOS[k];
+      if (!campos) { fila[k] = NA; return; }
+      var m = n(v[campos.num]), vis = n(v[campos.visitas]), fecha = String(v[campos.fecha] || "").slice(0, 10);
+      if (m !== null) totApoyo[k] = (totApoyo[k] || 0) + m;
+      if (!m) { fila[k] = NA; return; }
+      var txt = pl(m, "persona", "personas");
+      if (vis !== null) txt += " · " + pl(vis, "visita", "visitas") + " en los últimos 2 meses";
+      if (fecha) txt += " · última visita: " + fecha;
+      fila[k] = txt + ".";
+    });
+    fila.nombres = fraseNombres(q.etq, listaNombres([v.personas, v.personasNov]));
+    filas.push(fila);
+  });
+
+  var total = {}, filaTot = { rol: "Talento humano total", total: true, nombres: "" };
+  CORTES.forEach(function (k) {
+    var b = totBase[k], ap = totApoyo[k];
+    if (b === null && ap === null) { total[k] = null; filaTot[k] = NA; return; }
+    total[k] = (b || 0) + (ap || 0);
+    filaTot[k] = APOYO_CAMPOS[k]
+      ? pl(total[k], "persona", "personas") + " (" + (b || 0) + " del equipo base + " + (ap || 0) + " del equipo de apoyo)."
+      : pl(total[k], "persona", "personas") + " del equipo base.";
+  });
+  filas.push(filaTot);
+
+  return { filas: filas, ratio: ratio, total: total };
+}
+
+/* Módulo 8: Resumen TH vs Cobertura (solo lectura, se calcula con lo diligenciado) */
+const RTH_CORTES = [["oct2025", "Octubre 2025"], ["feb2026", "Febrero 2026"], ["ago2026", "Agosto 2026"], ["nov2026", "Noviembre 2026"]];
+const escH = s => String(s == null ? "" : s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+
+function renderResumenTH() {
+  const cont = $("rth-cuerpo");
+  if (!cont || !aud) return;
+  const r = resumenTHCobertura(aud);
+  const txt = t => t === "NO APLICA" ? '<span class="rth-na">NO APLICA</span>' : escH(t);
+  const filaTot = r.filas.find(f => f.total);
+  let html = `<div class="aviso aviso-info">Talento humano total que atiende a las niñas y los niños este mes (Nov 2026): <b>${txt(filaTot.nov2026)}</b></div>`;
+  html += '<div class="col-tit">Niñas y niños por Profesional API (cupos asignados ÷ profesionales)</div>';
+  html += '<div class="mnl-kpis">' + RTH_CORTES.map(([k, etq]) =>
+    `<div class="mnl-kpi"><b>${r.ratio[k] != null ? r.ratio[k] : "—"}</b><small>${etq}</small></div>`).join("") + '</div>';
+  html += r.filas.map(f => `<div class="rth-card${f.total ? " rth-total" : ""}">
+      <h3>${escH(f.rol)}</h3>
+      ${RTH_CORTES.map(([k, etq]) => `<div class="rth-fila"><b>${etq}</b><span>${txt(f[k])}</span></div>`).join("")}
+      ${f.total ? "" : `<div class="rth-nombres"><b>Nombre del TH:</b> ${txt(f.nombres)}</div>`}
+    </div>`).join("");
+  cont.innerHTML = html;
+}
+
+/* Tablero: sección 6, Resumen TH vs Cobertura (última visita de cada jardín) */
+function tcHtmlResumenTH(resJ) {
+  const cab = (extra) => `<div class="tc-seccion"><div class="tc-seccion-cab"><div class="num">6</div><h3>Resumen TH vs Cobertura</h3>${extra}</div>`;
+  if (!TC || !Array.isArray(TC.resumenTH)) {
+    return cab("") + '<div class="tc-vacio">El servicio (backend) todavía no devuelve este resumen. Pega la última versión de Code.gs en Apps Script y crea una <b>Versión nueva</b> de la implementación.</div></div>';
+  }
+  const celda = t => (t === "NO APLICA" || !t) ? `<span style="color:var(--tinta-2)">${t || "—"}</span>` : escH(t);
+  const body = resJ.map(j => j.filas.map((f, i) => `<tr${f.total ? ' class="tc-total-row"' : ""}>
+      ${i === 0 ? `<td rowspan="${j.filas.length}" style="vertical-align:top;background:#fff;font-weight:400"><span class="loc">${escH(j.localidad)}</span><br><span class="jar">${escH(j.codigo)}</span><br><span style="font-size:11px;color:var(--tinta-2)">${escH(tcLimpiaNom(j.jardin))}</span></td>` : ""}
+      <td class="perfil">${escH(f.rol)}</td>
+      ${RTH_CORTES.map(([k]) => `<td style="font-size:12px;min-width:170px">${celda(f[k])}</td>`).join("")}
+      <td style="font-size:12px;min-width:240px">${celda(f.nombres)}</td>
+    </tr>`).join("")).join("");
+  return cab(`<span style="font-size:12px;opacity:.8">${resJ.length} jardines</span>
+      <div class="tc-cab-acciones"><button class="btn-excel" onclick="exportarResumenTH()" ${resJ.length ? "" : "disabled"}>⬇ Descargar Excel</button></div>`) + `
+    <p style="font-size:12px;color:var(--tinta-2);padding:12px 16px 0;margin:0">Niñas y niños por Profesional API (cupos asignados ÷ profesionales) y talento humano por corte, con la última visita de cada jardín.</p>
+    <div class="tc-tabla-wrap" style="max-height:560px;overflow:auto">
+      ${resJ.length ? `<table class="tc-tabla" style="min-width:1180px">
+        <thead><tr><th>Jardín infantil</th><th>Rol</th>${RTH_CORTES.map(([, etq]) => `<th>${etq}</th>`).join("")}<th>Nombre del TH</th></tr></thead>
+        <tbody>${body}</tbody>
+      </table>` : '<div class="tc-vacio">No hay datos para el resumen con los filtros seleccionados.</div>'}
+    </div>
+  </div>`;
+}
+
+function exportarResumenTH() {
+  const rows = (TC_EXPORT.res || []);
+  if (!rows.length) { alert('No hay datos del resumen para exportar.'); return; }
+  const aoa = [['Localidad', 'Jardín infantil', 'Rol'].concat(RTH_CORTES.map(c => c[1])).concat(['Nombre del TH'])];
+  rows.forEach(j => j.filas.forEach(f => {
+    aoa.push([j.localidad, tcNombreJardin(j.codigo, j.jardin), f.rol].concat(RTH_CORTES.map(c => f[c[0]] || '')).concat([f.nombres || '']));
+  }));
+  const cols = [{ wch: 24 }, { wch: 32 }, { wch: 22 }, { wch: 46 }, { wch: 46 }, { wch: 46 }, { wch: 46 }, { wch: 60 }];
+  descargarXLSX('Resumen_TH_vs_Cobertura' + tcSufijoArchivo(), [{ nombre: 'RESUMEN', aoa: aoa, cols: cols }]);
 }
 
 /* ---------- Dashboard de seguimiento ---------- */
@@ -1636,10 +1902,10 @@ function pintarTablero() {
 
   // ========== AJUSTE 4: Cobertura (pivot por periodo) ==========
   const COB_IND = ["Cupos proyectados", "Cupos asignados", "Asistencia promedio"];
-  const COB_PER = [["oct2025", "Octubre 2025"], ["feb2026", "Febrero 2026"], ["ago2026", "Agosto 2026"]];
+  const COB_PER = [["oct2025", "Octubre 2025"], ["feb2026", "Febrero 2026"], ["ago2026", "Agosto 2026"], ["nov2026", "Noviembre 2026"]];
   const cobJard = {};
   jardinesFiltrados.forEach(j => { cobJard[j.codigo] = { localidad: j.localidad, codigo: j.codigo, jardin: j.jardin, ind: {} }; });
-  TC.cobertura.forEach(r => { if (cobJard[r.codigo]) cobJard[r.codigo].ind[r.indicador] = { oct2025: r.oct2025, feb2026: r.feb2026, ago2026: r.ago2026 }; });
+  TC.cobertura.forEach(r => { if (cobJard[r.codigo]) cobJard[r.codigo].ind[r.indicador] = { oct2025: r.oct2025, feb2026: r.feb2026, ago2026: r.ago2026, nov2026: r.nov2026 }; });
   const cobRows = Object.values(cobJard).filter(x => Object.keys(x.ind).length)
     .sort((a, b) => a.localidad.localeCompare(b.localidad) || a.codigo.localeCompare(b.codigo));
 
@@ -1656,7 +1922,12 @@ function pintarTablero() {
   TC.alertas.filter(r => (!loc || r.localidad === loc) && (!jar || r.codigo === jar)).forEach(r => { catCount[r.categoria] = (catCount[r.categoria] || 0) + 1; });
 
   // Guardar datos para exportar a Excel
-  TC_EXPORT = { th: thRows, cob: cobRows, alertas: alertasFiltradas, pendAlertas: pendAlertas };
+  // ========== Resumen TH vs Cobertura (respeta los filtros) ==========
+  const codSel = new Set(jardinesFiltrados.map(j => j.codigo));
+  const resJ = (TC.resumenTH || []).filter(x => codSel.has(x.codigo))
+    .sort((a, b) => a.localidad.localeCompare(b.localidad) || a.codigo.localeCompare(b.codigo));
+
+  TC_EXPORT = { th: thRows, cob: cobRows, alertas: alertasFiltradas, pendAlertas: pendAlertas, res: resJ };
 
   // ===== Render de tablas =====
   const thHead = TC_PERFILES.map(p => `<th>${esc(p.etq)}</th>`).join('');
@@ -1822,7 +2093,7 @@ function pintarTablero() {
       ${cobChips}
       <div class="tc-tabla-wrap">
         ${cobRows.length ? `
-        <table class="tc-tabla" style="min-width:840px">
+        <table class="tc-tabla" style="min-width:1100px">
           <thead>
             <tr>
               <th rowspan="2">Localidad</th>
@@ -1830,6 +2101,7 @@ function pintarTablero() {
               <th class="grp" colspan="3">Octubre 2025</th>
               <th class="grp" colspan="3">Febrero 2026</th>
               <th class="grp" colspan="3">Agosto 2026</th>
+              <th class="grp" colspan="3">Noviembre 2026</th>
             </tr>
             <tr>${cobHead2}</tr>
           </thead>
@@ -1917,6 +2189,8 @@ function pintarTablero() {
         </table>
       </div>` : '<div class="tc-vacio">No hay alertas con los filtros seleccionados.</div>'}
     </div>
+
+    ${tcHtmlResumenTH(resJ)}
   `;
 }
 
@@ -1929,7 +2203,7 @@ function tcTotTH(rows) {
 function tcEsProm(ind) { return /promedio|asistencia/i.test(ind); }
 function tcTotCob(rows) {
   const IND = ['Cupos proyectados', 'Cupos asignados', 'Asistencia promedio'];
-  const PERK = ['oct2025', 'feb2026', 'ago2026'];
+  const PERK = ['oct2025', 'feb2026', 'ago2026', 'nov2026'];
   const agg = {}; PERK.forEach(k => { agg[k] = {}; IND.forEach(i => agg[k][i] = { sum: 0, cnt: 0 }); });
   (rows || []).forEach(r => PERK.forEach(k => IND.forEach(i => {
     const v = r.ind[i] ? Number(r.ind[i][k]) : NaN;
@@ -2003,7 +2277,7 @@ function exportarCobertura() {
   const rows = (TC_EXPORT.cob || []);
   if (!rows.length) { alert('No hay datos de cobertura para exportar.'); return; }
   const IND = ['Cupos proyectados', 'Cupos asignados', 'Asistencia promedio'];
-  const PER = [['oct2025', 'Octubre 2025'], ['feb2026', 'Febrero 2026'], ['ago2026', 'Agosto 2026']];
+  const PER = [['oct2025', 'Octubre 2025'], ['feb2026', 'Febrero 2026'], ['ago2026', 'Agosto 2026'], ['nov2026', 'Noviembre 2026']];
   const h1 = ['Localidad', 'Jard\u00edn infantil'];
   const h2 = ['', ''];
   PER.forEach(p => { h1.push(p[1], '', ''); IND.forEach(i => h2.push(i)); });
@@ -2022,9 +2296,10 @@ function exportarCobertura() {
     { s: { r: 0, c: 1 }, e: { r: 1, c: 1 } },
     { s: { r: 0, c: 2 }, e: { r: 0, c: 4 } },
     { s: { r: 0, c: 5 }, e: { r: 0, c: 7 } },
-    { s: { r: 0, c: 8 }, e: { r: 0, c: 10 } }
+    { s: { r: 0, c: 8 }, e: { r: 0, c: 10 } },
+    { s: { r: 0, c: 11 }, e: { r: 0, c: 13 } }
   ];
-  const cols = [{ wch: 24 }, { wch: 32 }].concat(Array.from({ length: 9 }, () => ({ wch: 15 })));
+  const cols = [{ wch: 24 }, { wch: 32 }].concat(Array.from({ length: 12 }, () => ({ wch: 15 })));
   descargarXLSX('Cobertura' + tcSufijoArchivo(), [{ nombre: 'Cobertura', aoa: aoa, merges: merges, cols: cols }]);
 }
 function exportarAlertas() {
@@ -2076,7 +2351,7 @@ let MNL = null;
 let mnlFiltroLoc = "", mnlFiltroJar = "", mnlFiltroComp = "", mnlFiltroJar3 = "";
 
 function mnlLocDe(codigo){ const j = JARDINES.find(x => x.codigo === String(codigo)); return j ? j.localidad : ""; }
-function mnlNombre(codigo, fallback){ const j = JARDINES.find(x => x.codigo === String(codigo)); const nom = (j && j.jardin) || fallback || codigo; return String(nom).replace(/JARDIN INFANTIL NOCTURNO-?/i, "").trim(); }
+function mnlNombre(codigo, fallback){ const j = JARDINES.find(x => x.codigo === String(codigo)); const nom = (j && j.nombre) || fallback || codigo; return String(nom).replace(/JARDIN INFANTIL NOCTURNO-?/i, "").trim(); }
 function mnlProm(regs){ const v = regs.map(r => BANDA_VAL[r.estado]).filter(x => typeof x === "number"); if(!v.length) return null; return Math.round(v.reduce((a,b)=>a+b,0)/v.length); }
 
 async function abrirManual(){
@@ -2115,9 +2390,9 @@ function pintarManual(){
 
   const locOpts = LOCALIDADES.slice().sort().map(l => `<option value="${esc(l)}" ${l===mnlFiltroLoc?'selected':''}>${esc(l)}</option>`).join("");
   const jardList = JARDINES.filter(j => !mnlFiltroLoc || j.localidad === mnlFiltroLoc);
-  const jarOpts = jardList.map(j => `<option value="${j.codigo}" ${j.codigo===mnlFiltroJar?'selected':''}>${j.codigo} · ${esc(mnlNombre(j.codigo, j.jardin))}</option>`).join("");
+  const jarOpts = jardList.map(j => `<option value="${j.codigo}" ${j.codigo===mnlFiltroJar?'selected':''}>${j.codigo} · ${esc(mnlNombre(j.codigo, j.nombre))}</option>`).join("");
 
-  let html = '<h2 style="margin:4px 0">\U0001F4D8 Análisis del Manual</h2>';
+  let html = '<h2 style="margin:4px 0">📘 Análisis del Manual</h2>';
   html += `<div class="mnl-filtros">
     <select id="mnl-loc"><option value="">Todas las localidades</option>${locOpts}</select>
     <select id="mnl-jar"><option value="">Todos los jardines</option>${jarOpts}</select>
@@ -2204,7 +2479,7 @@ function pintarManual(){
               <span class="mnl-badge ${cls}">${esc(r.estado)}</span>
             </div>
             <div style="font-size:11px;color:var(--tinta-2);margin-top:5px">${esc(r.codigo)} · ${esc(mnlNombre(r.codigo, r.jardin))}</div>
-            ${r.hallazgo ? `<div class="obs">\U0001F5D2 ${esc(r.hallazgo)}</div>` : ''}
+            ${r.hallazgo ? `<div class="obs">🗒 ${esc(r.hallazgo)}</div>` : ''}
           </div>`;
         });
       });
@@ -2283,7 +2558,8 @@ document.addEventListener("DOMContentLoaded", () => {
   $("in-observaciones").addEventListener("input", e => { if (aud) { aud.observaciones = e.target.value; guardarBorrador(); } });
 
   const s = store.get(CLAVE_SESION);
-  if (s && s.usuario) { sesion = s; irASeleccion(); }
+  if (s && s.usuario && (s.token || !API_URL)) { sesion = s; irASeleccion(); }
+  else if (s && s.usuario) sesionVencida("Por una actualización de seguridad debes ingresar de nuevo. Tu borrador sigue guardado en este dispositivo.");
 });
 </script>
 </body>
